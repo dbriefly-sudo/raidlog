@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="РЕЙД">
+<meta name="theme-color" content="#0d0d0d">
+<title>РЕЙД</title>
+<style>
+:root {
+  --bg:   #0d0d0d;
+  --bg2:  #141414;
+  --bg3:  #1c1c1c;
+  --fg:   #c8c8b8;
+  --dim:  #5a5a52;
+  --acc:  #c87941;
+  --acc2: #e8a060;
+  --brd:  #242420;
+  --r-common:    #5a5a5a;
+  --r-uncommon:  #5a7a4a;
+  --r-rare:      #3a6a8a;
+  --r-very_rare: #7a5a9a;
+  --r-legendary: #c87941;
+  --font: 'Courier New', Courier, monospace;
+  --st: env(safe-area-inset-top, 0px);
+  --sb: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body { height: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font);
+  font-size: 14px;
+  overflow-x: hidden;
+}
+
+/* CRT scanlines */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(0,0,0,0.09) 2px, rgba(0,0,0,0.09) 3px);
+  pointer-events: none;
+  z-index: 9000;
+}
+/* Vignette */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.45) 100%);
+  pointer-events: none;
+  z-index: 8999;
+}
+
+#app { display: flex; flex-direction: column; min-height: 100dvh; padding-top: var(--st); }
+
+/* HEADER */
+#hdr {
+  padding: 10px 16px 9px;
+  border-bottom: 1px solid var(--brd);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+#hdr h1 { font-size: 17px; letter-spacing: 5px; color: var(--acc); font-weight: normal; }
+#hdr-xp { font-size: 11px; color: var(--dim); text-align: right; line-height: 1.5; }
+#hdr-xp b { color: var(--acc); }
+
+/* TABS */
+#tabs {
+  display: flex;
+  border-bottom: 1px solid var(--brd);
+  background: var(--bg);
+  position: sticky;
+  top: 40px;
+  z-index: 99;
+  flex-shrink: 0;
+}
+.t-btn {
+  flex: 1;
+  padding: 9px 2px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--dim);
+  font-family: var(--font);
+  font-size: 10px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
+}
+.t-btn.on { color: var(--acc); border-bottom-color: var(--acc); }
+.t-btn:focus-visible { outline: 1px solid var(--acc); outline-offset: -1px; }
+
+/* CONTENT */
+#content { flex: 1; overflow-y: auto; padding-bottom: calc(16px + var(--sb)); }
+
+/* STAT BAR */
+.sbar {
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--brd);
+  font-size: 11px;
+  color: var(--dim);
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.sbar b { color: var(--acc); }
+
+/* SECTION */
+.sec { padding: 14px 16px; }
+
+/* UNLOCK BLOCK */
+.unlock-blk {
+  border: 1px solid var(--brd);
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  background: var(--bg2);
+}
+.unlock-lbl { font-size: 10px; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+.unlock-item { font-size: 13px; color: var(--fg); margin-bottom: 8px; }
+.prog-bar { height: 2px; background: var(--brd); }
+.prog-fill { height: 100%; background: var(--acc); transition: width .4s; }
+.prog-txt { font-size: 10px; color: var(--dim); margin-top: 4px; }
+
+/* ACTIVITY CARD */
+.act-card { border: 1px solid var(--brd); margin-bottom: 11px; background: var(--bg2); }
+.act-hdr { padding: 10px 12px 6px; border-bottom: 1px solid var(--brd); }
+.act-name { font-size: 15px; color: var(--fg); margin-bottom: 2px; }
+.act-gname { font-size: 11px; color: var(--acc); letter-spacing: 1px; }
+.act-meta { padding: 6px 12px; font-size: 11px; color: var(--dim); display: flex; gap: 16px; }
+.cmp-btn {
+  display: block;
+  width: calc(100% - 24px);
+  margin: 8px 12px 12px;
+  padding: 14px;
+  background: var(--bg3);
+  border: 1px solid var(--acc);
+  color: var(--acc);
+  font-family: var(--font);
+  font-size: 12px;
+  letter-spacing: 3px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: background .15s;
+}
+.cmp-btn:hover, .cmp-btn:focus-visible { background: rgba(200,121,65,.15); outline: none; }
+.cmp-btn:active { background: rgba(200,121,65,.25); }
+
+/* UNDO */
+.undo-btn {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  background: none;
+  border: 1px solid var(--brd);
+  color: var(--dim);
+  font-family: var(--font);
+  font-size: 10px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  text-transform: uppercase;
+  text-align: left;
+  margin-top: 4px;
+}
+.undo-btn:hover, .undo-btn:focus-visible { border-color: var(--dim); color: var(--fg); outline: none; }
+.undo-btn:disabled { opacity: .3; cursor: default; }
+
+/* INVENTORY */
+.xp-blk { padding: 10px 16px; border-bottom: 1px solid var(--brd); }
+.xp-lbl { font-size: 10px; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 2px; }
+.xp-lvl { font-size: 22px; color: var(--acc); margin-bottom: 6px; }
+.xp-sub { font-size: 10px; color: var(--dim); margin-top: 4px; }
+
+.inv-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 12px 16px;
+}
+.inv-item {
+  border: 2px solid var(--r-common);
+  background: var(--bg2);
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  transition: filter .15s;
+}
+.inv-item:hover, .inv-item:focus-visible { filter: brightness(1.35); outline: none; }
+.inv-item[data-r="uncommon"]  { border-color: var(--r-uncommon); }
+.inv-item[data-r="rare"]      { border-color: var(--r-rare); }
+.inv-item[data-r="very_rare"] { border-color: var(--r-very_rare); }
+.inv-item[data-r="legendary"] { border-color: var(--r-legendary); }
+
+.i-icon {
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; font-weight: bold;
+  margin-bottom: 4px;
+  background: var(--r-common); color: #111;
+}
+.inv-item[data-r="uncommon"]  .i-icon { background: var(--r-uncommon); }
+.inv-item[data-r="rare"]      .i-icon { background: var(--r-rare); }
+.inv-item[data-r="very_rare"] .i-icon { background: var(--r-very_rare); }
+.inv-item[data-r="legendary"] .i-icon { background: var(--r-legendary); }
+
+.i-cnt { position: absolute; top: 3px; right: 5px; font-size: 10px; color: var(--dim); }
+.i-name { font-size: 8px; color: var(--dim); line-height: 1.3; }
+.inv-empty { padding: 32px 16px; text-align: center; color: var(--dim); font-size: 12px; }
+
+/* CALENDAR */
+.cal-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; border-bottom: 1px solid var(--brd);
+}
+.cal-nav-btn {
+  background: none; border: 1px solid var(--brd);
+  color: var(--dim); font-family: var(--font);
+  font-size: 15px; padding: 3px 10px; cursor: pointer;
+}
+.cal-nav-btn:hover, .cal-nav-btn:focus-visible { border-color: var(--dim); color: var(--fg); outline: none; }
+.cal-mo { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--fg); }
+
+.cal-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 2px; padding: 8px 16px 16px;
+}
+.cal-dh { text-align: center; font-size: 9px; color: var(--dim); padding: 4px 0; }
+.cal-d {
+  text-align: center; padding: 7px 0;
+  font-size: 12px; color: var(--dim);
+  cursor: pointer; border: 1px solid transparent;
+}
+.cal-d:hover, .cal-d:focus-visible { border-color: var(--brd); outline: none; }
+.cal-d.act  { background: rgba(200,121,65,.18); color: var(--acc); border-color: rgba(200,121,65,.3); }
+.cal-d.tod  { color: var(--fg); border-color: var(--brd); }
+.cal-d.emp  { cursor: default; color: transparent; border-color: transparent; }
+
+/* DATA */
+.data-sec { padding: 16px; }
+.d-btn {
+  display: block; width: 100%;
+  padding: 12px 14px; margin-bottom: 8px;
+  background: var(--bg2); border: 1px solid var(--brd);
+  color: var(--fg); font-family: var(--font);
+  font-size: 11px; letter-spacing: 2px;
+  cursor: pointer; text-align: left; text-transform: uppercase;
+}
+.d-btn:hover, .d-btn:focus-visible { border-color: var(--dim); outline: none; }
+.d-btn.dng { color: #8a3a3a; border-color: #2a1010; }
+.d-btn.dng:hover { border-color: #8a3a3a; }
+.d-info { margin-top: 16px; padding: 12px; border: 1px solid var(--brd); font-size: 11px; color: var(--dim); line-height: 1.7; }
+
+/* MODAL */
+.ov {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.88);
+  z-index: 500;
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+}
+.mbox {
+  background: var(--bg); border: 1px solid var(--brd);
+  padding: 20px; max-width: 360px; width: 100%;
+  max-height: 85dvh; overflow-y: auto;
+}
+.m-title { font-size: 13px; letter-spacing: 2px; color: var(--acc); text-transform: uppercase; margin-bottom: 12px; }
+.m-text  { font-size: 12px; color: var(--dim); line-height: 1.7; margin-bottom: 16px; }
+.m-btns  { display: flex; gap: 8px; margin-top: 16px; }
+.m-btn {
+  flex: 1; padding: 10px;
+  background: none; border: 1px solid var(--brd);
+  color: var(--dim); font-family: var(--font);
+  font-size: 10px; letter-spacing: 1px;
+  cursor: pointer; text-transform: uppercase;
+}
+.m-btn.pri { border-color: var(--acc); color: var(--acc); }
+.m-btn:hover, .m-btn:focus-visible { filter: brightness(1.3); outline: none; }
+
+/* item detail */
+.id-hdr { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 14px; }
+.id-icon { width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; }
+.id-rarity { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; margin-top: 3px; }
+.id-rows { font-size: 11px; color: var(--dim); line-height: 2; }
+.id-rows span { color: var(--fg); }
+
+/* day detail */
+.dd-sess { border-bottom: 1px solid var(--brd); padding: 8px 0; font-size: 12px; }
+.dd-sess:last-child { border-bottom: none; }
+.dd-hd { color: var(--fg); margin-bottom: 3px; }
+.dd-drops { color: var(--dim); font-size: 11px; line-height: 1.6; }
+
+/* LOOT OVERLAY */
+.loot-ov {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.93);
+  z-index: 600;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 16px; gap: 20px;
+}
+.loot-title { font-size: 10px; letter-spacing: 5px; color: var(--dim); text-transform: uppercase; }
+.loot-cards { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+.loot-card {
+  width: 88px; height: 118px;
+  border: 2px solid var(--brd);
+  background: var(--bg2);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 8px; text-align: center;
+  opacity: 0; transform: translateY(12px);
+}
+.loot-card.vis {
+  opacity: 1; transform: translateY(0);
+  transition: opacity .35s, transform .35s, box-shadow .35s;
+}
+.loot-card[data-r="common"]    { border-color: var(--r-common); }
+.loot-card[data-r="uncommon"]  { border-color: var(--r-uncommon); }
+.loot-card[data-r="rare"]      { border-color: var(--r-rare); }
+.loot-card[data-r="very_rare"] { border-color: var(--r-very_rare); }
+.loot-card[data-r="legendary"] { border-color: var(--r-legendary); }
+
+.loot-card.glow[data-r="common"]    { box-shadow: 0 0 12px var(--r-common); }
+.loot-card.glow[data-r="uncommon"]  { box-shadow: 0 0 14px var(--r-uncommon); }
+.loot-card.glow[data-r="rare"]      { box-shadow: 0 0 22px var(--r-rare), 0 0 44px rgba(58,106,138,.4); }
+.loot-card.glow[data-r="very_rare"] { box-shadow: 0 0 20px var(--r-very_rare), 0 0 40px rgba(122,90,154,.4); }
+.loot-card.glow[data-r="legendary"] { box-shadow: 0 0 28px var(--r-legendary), 0 0 56px rgba(200,121,65,.5); }
+
+.lc-icon {
+  width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 19px; font-weight: bold; margin-bottom: 6px;
+  background: var(--r-common); color: #111;
+}
+.loot-card[data-r="uncommon"]  .lc-icon { background: var(--r-uncommon); }
+.loot-card[data-r="rare"]      .lc-icon { background: var(--r-rare); }
+.loot-card[data-r="very_rare"] .lc-icon { background: var(--r-very_rare); }
+.loot-card[data-r="legendary"] .lc-icon { background: var(--r-legendary); }
+
+.lc-name   { font-size: 8px; color: var(--dim); line-height: 1.3; margin-bottom: 4px; }
+.lc-rarity { font-size: 8px; letter-spacing: 1px; text-transform: uppercase; }
+.loot-card[data-r="common"]    .lc-rarity { color: var(--r-common); }
+.loot-card[data-r="uncommon"]  .lc-rarity { color: var(--r-uncommon); }
+.loot-card[data-r="rare"]      .lc-rarity { color: var(--r-rare); }
+.loot-card[data-r="very_rare"] .lc-rarity { color: var(--r-very_rare); }
+.loot-card[data-r="legendary"] .lc-rarity { color: var(--r-legendary); }
+
+.loot-acts { display: flex; gap: 8px; }
+.l-btn {
+  padding: 10px 20px;
+  background: none; border: 1px solid var(--brd);
+  color: var(--dim); font-family: var(--font);
+  font-size: 10px; letter-spacing: 2px;
+  cursor: pointer; text-transform: uppercase;
+}
+.l-btn.pri { border-color: var(--acc); color: var(--acc); }
+.l-btn:hover, .l-btn:focus-visible { filter: brightness(1.3); outline: none; }
+
+/* SAFARI HINT */
+.safari-hint {
+  position: fixed;
+  bottom: calc(8px + var(--sb));
+  left: 16px; right: 16px;
+  background: var(--bg3); border: 1px solid var(--acc);
+  padding: 12px; z-index: 700;
+  font-size: 11px; color: var(--dim); line-height: 1.7;
+}
+.sh-title { color: var(--acc); margin-bottom: 6px; letter-spacing: 1px; font-size: 10px; text-transform: uppercase; }
+.sh-close {
+  display: block; margin-top: 8px; width: 100%;
+  background: none; border: 1px solid var(--brd);
+  color: var(--dim); font-family: var(--font);
+  font-size: 10px; padding: 7px; cursor: pointer;
+}
+
+/* DESKTOP */
+@media (min-width: 900px) {
+  #app { max-width: 1080px; margin: 0 auto; }
+  .sortie-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+  .inv-grid { grid-template-columns: repeat(5, 1fr); }
+}
+
+/* REDUCED MOTION */
+@media (prefers-reduced-motion: reduce) {
+  .loot-card { transition: none !important; }
+  .prog-fill  { transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="hdr">
+    <h1>РЕЙД</h1>
+    <div id="hdr-xp"><span id="hxp-lvl">УРОВЕНЬ 1</span><br><span id="hxp-xp">0 XP</span></div>
+  </header>
+  <div id="tabs">
+    <button class="t-btn on" data-tab="sortie">ВЫЛАЗКА</button>
+    <button class="t-btn" data-tab="inventory">ИНВЕНТАРЬ</button>
+    <button class="t-btn" data-tab="calendar">КАЛЕНДАРЬ</button>
+    <button class="t-btn" data-tab="data">ДАННЫЕ</button>
+  </div>
+  <div id="content">
+    <div id="tab-sortie"></div>
+    <div id="tab-inventory" hidden></div>
+    <div id="tab-calendar" hidden></div>
+    <div id="tab-data" hidden></div>
+  </div>
+</div>
+<div id="mc"></div>
+
+<script>
+'use strict';
+
+/* ── STRINGS ─────────────────────────────────────────────────────────────── */
+const S = {
+  tabs: ['ВЫЛАЗКА','ИНВЕНТАРЬ','КАЛЕНДАРЬ','ДАННЫЕ'],
+  activeDaysMo: 'Активных дней в этом месяце',
+  nextReward: 'БЛИЖАЙШАЯ НАГРАДА',
+  allUnlocked: 'Все плановые награды получены',
+  totalSess: 'сессий',
+  actSess: 'сессий активности',
+  todaySess: 'Сегодня',
+  totalSessLbl: 'Всего',
+  completeBtn: 'ЗАВЕРШИТЬ ВЫЛАЗКУ',
+  undoBtn: 'Отменить последнюю вылазку',
+  confirmDouble: 'Вы уже выполнили {n} сессию(-и) этой активности сегодня. Продолжить?',
+  confirmUndo: 'Отменить последнюю вылазку? Предметы и XP будут удалены.',
+  lootTitle: 'ДОБЫЧА',
+  skipAnim: 'ПРОПУСТИТЬ',
+  closeLoot: 'ЗАКРЫТЬ',
+  level: 'УРОВЕНЬ',
+  xpToNext: 'до след. уровня',
+  invEmpty: 'Инвентарь пуст. Выполните вылазку.',
+  detailCnt: 'Количество',
+  detailDate: 'Дата находки',
+  detailAct: 'Активность',
+  detailRarity: 'Редкость',
+  closeBtn: 'ЗАКРЫТЬ',
+  activeDays: 'Активных дней',
+  noSessions: 'В этот день сессий не было.',
+  exportBtn: 'ЭКСПОРТ СОХРАНЕНИЯ',
+  importBtn: 'ИМПОРТ СОХРАНЕНИЯ',
+  resetBtn: 'СБРОСИТЬ ВСЁ',
+  confirmImport: 'Загрузить сохранение? Текущий прогресс будет заменён.',
+  confirmReset: 'Сбросить все данные? Это необратимо.',
+  cancelBtn: 'ОТМЕНА',
+  confirmBtn: 'ПОДТВЕРДИТЬ',
+  dataInfo: 'Прогресс хранится только в этом браузере. Для переноса на другое устройство используйте экспорт.',
+  months: ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'],
+  weekdays: ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'],
+  rarities: { common:'обычный', uncommon:'необычный', rare:'редкий', very_rare:'очень редкий', legendary:'легендарный' },
+  safari: {
+    title: 'Добавить на экран «Домой»',
+    text: 'В Safari нажмите иконку «Поделиться», затем «На экран «Домой»» — приложение откроется без адресной строки.',
+    close: 'ПОНЯТНО',
+  },
+};
+
+/* ── ACTIVITIES ──────────────────────────────────────────────────────────── */
+const ACTIVITIES = [
+  { id: 'spanish',     name: 'Испанский',  gameName: 'Перехват сигнала' },
+  { id: 'handwriting', name: 'Прописи',    gameName: 'Полевые записи'   },
+  { id: 'training',    name: 'Тренировка', gameName: 'Физподготовка'    },
+  { id: 'reading',     name: 'Чтение',     gameName: 'Изучение архива'  },
+];
+
+/* ── ITEMS ───────────────────────────────────────────────────────────────── */
+const ITEMS = [
+  // Хлам
+  { id: 'rusty_bolts',    name: 'Горсть ржавых болтов',       rarity: 'common',    weight: 35, activities: ['training'] },
+  { id: 'radio_fragment', name: 'Обломок радиоблока',          rarity: 'common',    weight: 30, activities: ['spanish', 'reading'] },
+  { id: 'damp_notebook',  name: 'Сырая записная книжка',       rarity: 'common',    weight: 28, activities: ['handwriting', 'reading'] },
+  // Ресурсы
+  { id: 'copper_wire',    name: 'Катушка медного провода',     rarity: 'common',    weight: 26, activities: ['training', 'handwriting'] },
+  { id: 'signal_tape',    name: 'Лента с частотами',           rarity: 'uncommon',  weight: 14, activities: ['spanish'] },
+  { id: 'patch_fabric',   name: 'Клочок маскировочной ткани',  rarity: 'uncommon',  weight: 13, activities: ['training', 'handwriting'] },
+  { id: 'tin_filter',     name: 'Жестяной фильтр',             rarity: 'uncommon',  weight: 11, activities: ['training'] },
+  // Снаряжение
+  { id: 'drain_map',      name: 'Карта дренажного сектора',    rarity: 'rare',      weight: 6,  activities: ['reading', 'training'] },
+  { id: 'sector_pass',    name: 'Просроченный пропуск',        rarity: 'rare',      weight: 5,  activities: ['spanish', 'reading'] },
+  { id: 'corroded_badge', name: 'Коррозированный жетон',       rarity: 'rare',      weight: 5,  activities: ['reading', 'spanish'] },
+  { id: 'cipher_sheet',   name: 'Шифровальный бланк',          rarity: 'very_rare', weight: 3,  activities: ['spanish', 'handwriting'] },
+  // Артефакт
+  { id: 'void_fragment',  name: 'Фрагмент пустоты',            rarity: 'legendary', weight: 1,  activities: ['spanish', 'handwriting', 'training', 'reading'] },
+];
+
+/* ── UNLOCKS ─────────────────────────────────────────────────────────────── */
+const UNLOCKS = [
+  { id: 'u1', condition: { type: 'total',    count: 3  },                           itemId: 'drain_map'    },
+  { id: 'u2', condition: { type: 'activity', activityId: 'spanish',  count: 3 },   itemId: 'cipher_sheet' },
+  { id: 'u3', condition: { type: 'activity', activityId: 'training', count: 5 },   itemId: 'tin_filter'   },
+  { id: 'u4', condition: { type: 'total',    count: 15 },                           itemId: 'void_fragment' },
+];
+
+/* ── STORAGE ─────────────────────────────────────────────────────────────── */
+const KEY = 'raidlog_v1';
+
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(KEY));
+    if (d && d.schemaVersion === 1 && Array.isArray(d.sessions)) return d;
+  } catch(_) {}
+  return { schemaVersion: 1, sessions: [] };
+}
+
+function save() { localStorage.setItem(KEY, JSON.stringify(DB)); }
+
+let DB = load();
+
+/* ── UTILS ───────────────────────────────────────────────────────────────── */
+function uid() { return Math.random().toString(36).slice(2,9) + Date.now().toString(36); }
+
+function localDate(d = new Date()) {
+  return d.getFullYear() + '-' +
+    String(d.getMonth()+1).padStart(2,'0') + '-' +
+    String(d.getDate()).padStart(2,'0');
+}
+
+function fmtDateTime(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'}) +
+    ' ' + d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+}
+
+function fmtTime(iso) {
+  return new Date(iso).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+}
+
+const byId = id => ITEMS.find(i => i.id === id);
+const byAct = id => ACTIVITIES.find(a => a.id === id);
+
+/* ── COMPUTED ────────────────────────────────────────────────────────────── */
+function totalXP()  { return DB.sessions.reduce((s, x) => s + (x.xpAwarded||0), 0); }
+function level()    { return Math.floor(totalXP() / 100); }
+
+function sessCount(actId) {
+  return actId
+    ? DB.sessions.filter(s => s.activityId === actId).length
+    : DB.sessions.length;
+}
+
+function todayCount(actId) {
+  const today = localDate();
+  return DB.sessions.filter(s => s.activityId === actId && s.localDate === today).length;
+}
+
+function activeDays(year, month) {
+  const days = new Set();
+  DB.sessions.forEach(s => {
+    if (!s.localDate) return;
+    const [y,m] = s.localDate.split('-').map(Number);
+    if (y === year && m === month) days.add(s.localDate);
+  });
+  return days;
+}
+
+function unlockedIds() {
+  const ids = new Set();
+  DB.sessions.forEach(s => (s.unlockedRewardIds||[]).forEach(id => ids.add(id)));
+  return ids;
+}
+
+function nextUnlock() {
+  const got = unlockedIds();
+  const total = sessCount();
+  for (const u of UNLOCKS) {
+    if (got.has(u.id)) continue;
+    const c = u.condition;
+    const current = c.type === 'total'
+      ? Math.min(total, c.count)
+      : Math.min(sessCount(c.activityId), c.count);
+    return { unlock: u, current, needed: c.count, item: byId(u.itemId) };
+  }
+  return null;
+}
+
+/* ── LOOT ────────────────────────────────────────────────────────────────── */
+function rollLoot(actId) {
+  const pool = ITEMS.filter(i => i.activities.includes(actId));
+  const drops = [];
+  for (let k = 0; k < 3; k++) {
+    const total = pool.reduce((s, i) => s + i.weight, 0);
+    let r = Math.random() * total;
+    let picked = pool[pool.length-1];
+    for (const item of pool) { r -= item.weight; if (r <= 0) { picked = item; break; } }
+    drops.push({ instanceId: uid(), itemId: picked.id });
+  }
+  return drops;
+}
+
+function checkUnlocks(newTotal, actCounts) {
+  const got = unlockedIds();
+  return UNLOCKS.filter(u => {
+    if (got.has(u.id)) return false;
+    const c = u.condition;
+    return c.type === 'total' ? newTotal >= c.count : (actCounts[c.activityId]||0) >= c.count;
+  }).map(u => u.id);
+}
+
+/* ── ACTIONS ─────────────────────────────────────────────────────────────── */
+function completeSortie(actId) {
+  const now = new Date();
+  const drops = rollLoot(actId);
+  const newTotal = DB.sessions.length + 1;
+  const actCounts = {};
+  ACTIVITIES.forEach(a => { actCounts[a.id] = sessCount(a.id); });
+  actCounts[actId] = (actCounts[actId]||0) + 1;
+  const newUnlocks = checkUnlocks(newTotal, actCounts);
+
+  const allDrops = [...drops];
+  newUnlocks.forEach(uid_ => {
+    const u = UNLOCKS.find(x => x.id === uid_);
+    if (u) allDrops.push({ instanceId: uid() + '_u', itemId: u.itemId, isUnlock: true });
+  });
+
+  const sess = {
+    id: uid(),
+    activityId: actId,
+    completedAt: now.toISOString(),
+    localDate: localDate(now),
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    xpAwarded: 10,
+    drops: allDrops,
+    unlockedRewardIds: newUnlocks,
+  };
+  DB.sessions.push(sess);
+  save();
+  return sess;
+}
+
+function undoLast() {
+  if (DB.sessions.length) { DB.sessions.pop(); save(); }
+}
+
+/* ── STATE ───────────────────────────────────────────────────────────────── */
+let tab = 'sortie';
+let calY = new Date().getFullYear();
+let calM = new Date().getMonth() + 1;
+
+/* ── RENDER ──────────────────────────────────────────────────────────────── */
+function render() { renderHeader(); renderCurrent(); }
+
+function renderHeader() {
+  const xp = totalXP(), lv = level();
+  document.getElementById('hxp-lvl').textContent = S.level + ' ' + (lv+1);
+  document.getElementById('hxp-xp').textContent = xp + ' XP';
+}
+
+function renderCurrent() {
+  document.querySelectorAll('.t-btn').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  ['sortie','inventory','calendar','data'].forEach(t => {
+    document.getElementById('tab-' + t).hidden = (t !== tab);
+  });
+  const el = document.getElementById('tab-' + tab);
+  if (tab === 'sortie')    renderSortie(el);
+  if (tab === 'inventory') renderInventory(el);
+  if (tab === 'calendar')  renderCalendar(el);
+  if (tab === 'data')      renderData(el);
+}
+
+/* ── SORTIE ──────────────────────────────────────────────────────────────── */
+function renderSortie(el) {
+  const now = new Date();
+  const adm = activeDays(now.getFullYear(), now.getMonth()+1).size;
+  const nu = nextUnlock();
+  const last = DB.sessions.length ? DB.sessions[DB.sessions.length-1] : null;
+
+  let left = '', right = '';
+
+  // Unlock block (right on desktop)
+  if (nu) {
+    const pct = Math.round(nu.current / nu.needed * 100);
+    const condLbl = nu.unlock.condition.type === 'total'
+      ? nu.needed + ' ' + S.totalSess
+      : nu.needed + ' ' + S.actSess + ' «' + (byAct(nu.unlock.condition.activityId)?.name||'') + '»';
+    right += `<div class="unlock-blk">
+      <div class="unlock-lbl">${S.nextReward}</div>
+      <div class="unlock-item">${nu.item?.name||''}</div>
+      <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>
+      <div class="prog-txt">${nu.current} / ${nu.needed} — ${condLbl}</div>
+    </div>`;
+  } else {
+    right += `<div class="unlock-blk">
+      <div class="unlock-lbl">${S.nextReward}</div>
+      <div class="unlock-item" style="color:var(--dim)">${S.allUnlocked}</div>
+    </div>`;
+  }
+
+  // Activities (left on desktop)
+  ACTIVITIES.forEach(a => {
+    const tc = todayCount(a.id);
+    const tot = sessCount(a.id);
+    left += `<div class="act-card">
+      <div class="act-hdr">
+        <div class="act-name">${a.name}</div>
+        <div class="act-gname">${a.gameName}</div>
+      </div>
+      <div class="act-meta">
+        <span>${S.todaySess}: ${tc}</span>
+        <span>${S.totalSessLbl}: ${tot}</span>
+      </div>
+      <button class="cmp-btn" data-a="complete" data-act="${a.id}">${S.completeBtn}</button>
+    </div>`;
+  });
+
+  // Undo (right on desktop)
+  const undoInfo = last ? ` (${byAct(last.activityId)?.name||''}, ${last.localDate})` : '';
+  right += `<button class="undo-btn" data-a="undo" ${!last?'disabled':''}>${S.undoBtn}${undoInfo}</button>`;
+
+  el.innerHTML =
+    `<div class="sbar"><span>${S.activeDaysMo}: <b>${adm}</b></span></div>` +
+    `<div class="sec"><div class="sortie-inner"><div>${left}</div><div>${right}</div></div></div>`;
+}
+
+/* ── INVENTORY ───────────────────────────────────────────────────────────── */
+function buildInv() {
+  const map = {};
+  DB.sessions.forEach(sess => {
+    (sess.drops||[]).forEach(d => {
+      if (!map[d.itemId]) map[d.itemId] = [];
+      map[d.itemId].push({ instanceId: d.instanceId, completedAt: sess.completedAt, activityId: sess.activityId });
+    });
+  });
+  return map;
+}
+
+function renderInventory(el) {
+  const xp = totalXP(), lv = level(), inLv = xp % 100;
+  const inv = buildInv();
+  const hasItems = ITEMS.some(i => inv[i.id]);
+
+  let html = `<div class="xp-blk">
+    <div class="xp-lbl">${S.level}</div>
+    <div class="xp-lvl">${lv+1}</div>
+    <div class="prog-bar"><div class="prog-fill" style="width:${inLv}%"></div></div>
+    <div class="xp-sub">${xp} XP | ${100-inLv} ${S.xpToNext}</div>
+  </div>`;
+
+  if (!hasItems) {
+    html += `<div class="inv-empty">${S.invEmpty}</div>`;
+  } else {
+    html += '<div class="inv-grid">';
+    ITEMS.forEach(item => {
+      const instances = inv[item.id];
+      if (!instances) return;
+      html += `<div class="inv-item" tabindex="0" data-r="${item.rarity}" data-a="inv-detail" data-iid="${item.id}">
+        <span class="i-cnt">x${instances.length}</span>
+        <div class="i-icon">${item.name[0]}</div>
+        <div class="i-name">${item.name}</div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+
+/* ── CALENDAR ────────────────────────────────────────────────────────────── */
+function renderCalendar(el) {
+  const ad = activeDays(calY, calM);
+  const moLabel = S.months[calM-1] + ' ' + calY;
+  const first = new Date(calY, calM-1, 1);
+  let startDow = (first.getDay() + 6) % 7; // Mon=0
+  const dim = new Date(calY, calM, 0).getDate();
+  const today = localDate();
+
+  let grid = S.weekdays.map(d => `<div class="cal-dh">${d}</div>`).join('');
+  for (let i = 0; i < startDow; i++) grid += '<div class="cal-d emp"> </div>';
+  for (let d = 1; d <= dim; d++) {
+    const ds = calY + '-' + String(calM).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    const cls = ad.has(ds) ? 'act' : ds === today ? 'tod' : '';
+    grid += `<div class="cal-d ${cls}" tabindex="0" data-a="cal-day" data-date="${ds}">${d}</div>`;
+  }
+
+  el.innerHTML =
+    `<div class="sbar"><span>${S.activeDays}: <b>${ad.size}</b></span></div>
+    <div class="cal-nav">
+      <button class="cal-nav-btn" data-a="cal-prev">&lt;</button>
+      <div class="cal-mo">${moLabel}</div>
+      <button class="cal-nav-btn" data-a="cal-next">&gt;</button>
+    </div>
+    <div class="cal-grid">${grid}</div>`;
+}
+
+/* ── DATA ────────────────────────────────────────────────────────────────── */
+function renderData(el) {
+  el.innerHTML = `<div class="data-sec">
+    <button class="d-btn" data-a="export">${S.exportBtn}</button>
+    <button class="d-btn" data-a="import">${S.importBtn}</button>
+    <button class="d-btn dng" data-a="reset">${S.resetBtn}</button>
+    <div class="d-info">${S.dataInfo}</div>
+  </div>`;
+}
+
+/* ── MODALS ──────────────────────────────────────────────────────────────── */
+const mc = document.getElementById('mc');
+
+function confirm_(title, text) {
+  return new Promise(res => {
+    mc.innerHTML = `<div class="ov" id="conf-ov">
+      <div class="mbox">
+        <div class="m-title">${title}</div>
+        <div class="m-text">${text}</div>
+        <div class="m-btns">
+          <button class="m-btn" data-res="0">${S.cancelBtn}</button>
+          <button class="m-btn pri" data-res="1">${S.confirmBtn}</button>
+        </div>
+      </div>
+    </div>`;
+    mc.querySelectorAll('[data-res]').forEach(b => b.addEventListener('click', () => {
+      mc.innerHTML = ''; res(b.dataset.res === '1');
+    }));
+    mc.querySelector('#conf-ov').addEventListener('click', e => {
+      if (e.target === e.currentTarget) { mc.innerHTML = ''; res(false); }
+    });
+  });
+}
+
+function showInvDetail(itemId) {
+  const item = byId(itemId);
+  if (!item) return;
+  const inv = buildInv();
+  const instances = inv[itemId] || [];
+  const last = instances[instances.length-1];
+  mc.innerHTML = `<div class="ov" id="det-ov">
+    <div class="mbox">
+      <div class="id-hdr">
+        <div class="id-icon" style="background:var(--r-${item.rarity});color:#111">${item.name[0]}</div>
+        <div>
+          <div style="font-size:14px;color:var(--fg);margin-bottom:3px">${item.name}</div>
+          <div class="id-rarity" style="color:var(--r-${item.rarity})">${S.rarities[item.rarity]}</div>
+        </div>
+      </div>
+      <div class="id-rows">
+        ${S.detailCnt}: <span>${instances.length}</span><br>
+        ${S.detailDate}: <span>${last ? fmtDateTime(last.completedAt) : '—'}</span><br>
+        ${S.detailAct}: <span>${last ? (byAct(last.activityId)?.name||'—') : '—'}</span>
+      </div>
+      <div class="m-btns">
+        <button class="m-btn pri" data-a="close-modal">${S.closeBtn}</button>
+      </div>
+    </div>
+  </div>`;
+  mc.querySelector('[data-a="close-modal"]').addEventListener('click', () => mc.innerHTML = '');
+  mc.querySelector('#det-ov').addEventListener('click', e => { if (e.target===e.currentTarget) mc.innerHTML = ''; });
+}
+
+function showDayDetail(date) {
+  const sessions = DB.sessions.filter(s => s.localDate === date);
+  let inner = '';
+  if (!sessions.length) {
+    inner = `<div class="m-text">${S.noSessions}</div>`;
+  } else {
+    sessions.forEach(s => {
+      const drops = (s.drops||[]).map(d => byId(d.itemId)?.name||'').filter(Boolean).join(', ');
+      inner += `<div class="dd-sess">
+        <div class="dd-hd">${byAct(s.activityId)?.name||''} | ${fmtTime(s.completedAt)}</div>
+        <div class="dd-drops">${drops}</div>
+      </div>`;
+    });
+  }
+  mc.innerHTML = `<div class="ov" id="day-ov">
+    <div class="mbox">
+      <div class="m-title">${date}</div>
+      ${inner}
+      <div class="m-btns">
+        <button class="m-btn pri" data-a="close-modal">${S.closeBtn}</button>
+      </div>
+    </div>
+  </div>`;
+  mc.querySelector('[data-a="close-modal"]').addEventListener('click', () => mc.innerHTML = '');
+  mc.querySelector('#day-ov').addEventListener('click', e => { if (e.target===e.currentTarget) mc.innerHTML = ''; });
+}
+
+/* ── LOOT REVEAL ─────────────────────────────────────────────────────────── */
+function showLoot(session) {
+  const drops = session.drops || [];
+  const rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const cardsHtml = drops.map((d, i) => {
+    const item = byId(d.itemId);
+    if (!item) return '';
+    return `<div class="loot-card${rm?' vis glow':''}" data-r="${item.rarity}" data-idx="${i}">
+      <div class="lc-icon">${item.name[0]}</div>
+      <div class="lc-name">${item.name}</div>
+      <div class="lc-rarity">${S.rarities[item.rarity]}</div>
+    </div>`;
+  }).join('');
+
+  mc.innerHTML = `<div class="loot-ov">
+    <div class="loot-title">${S.lootTitle}</div>
+    <div class="loot-cards" id="lc">${cardsHtml}</div>
+    <div class="loot-acts">
+      ${!rm ? `<button class="l-btn" id="skip-btn">${S.skipAnim}</button>` : ''}
+      <button class="l-btn pri" id="close-loot" ${!rm?'style="display:none"':''}>${S.closeLoot}</button>
+    </div>
+  </div>`;
+
+  const cards = mc.querySelectorAll('.loot-card');
+  const closeBtn = mc.querySelector('#close-loot');
+  const skipBtn  = mc.querySelector('#skip-btn');
+
+  function revealAll() {
+    cards.forEach(c => { c.classList.add('vis'); setTimeout(() => c.classList.add('glow'), 60); });
+    if (skipBtn) skipBtn.style.display = 'none';
+    closeBtn.style.display = '';
+  }
+
+  if (!rm) {
+    let i = 0;
+    function next() {
+      if (i >= cards.length) { if (skipBtn) skipBtn.style.display='none'; closeBtn.style.display=''; return; }
+      const c = cards[i];
+      c.classList.add('vis');
+      const r = c.dataset.r;
+      const glowDelay = (r==='rare'||r==='very_rare'||r==='legendary') ? 150 : 100;
+      setTimeout(() => c.classList.add('glow'), glowDelay);
+      i++;
+      const pause = (r==='rare'||r==='very_rare'||r==='legendary') ? 800 : 520;
+      setTimeout(next, pause);
+    }
+    setTimeout(next, 250);
+    if (skipBtn) skipBtn.addEventListener('click', revealAll);
+  }
+
+  closeBtn.addEventListener('click', () => { mc.innerHTML = ''; render(); });
+}
+
+/* ── EVENTS ──────────────────────────────────────────────────────────────── */
+document.getElementById('tabs').addEventListener('click', e => {
+  const b = e.target.closest('.t-btn');
+  if (b) { tab = b.dataset.tab; renderCurrent(); }
+});
+
+document.addEventListener('click', async e => {
+  const t = e.target.closest('[data-a]');
+  if (!t) return;
+  switch (t.dataset.a) {
+
+    case 'complete': {
+      const actId = t.dataset.act;
+      const tc = todayCount(actId);
+      if (tc > 0) {
+        const msg = S.confirmDouble.replace('{n}', tc);
+        if (!await confirm_('Повторная вылазка', msg)) return;
+      }
+      const sess = completeSortie(actId);
+      renderHeader();
+      showLoot(sess);
+      break;
+    }
+
+    case 'undo': {
+      if (!await confirm_('Отмена', S.confirmUndo)) return;
+      undoLast();
+      render();
+      break;
+    }
+
+    case 'inv-detail': showInvDetail(t.dataset.iid); break;
+
+    case 'cal-prev':
+      if (--calM < 1) { calM = 12; calY--; }
+      renderCurrent();
+      break;
+
+    case 'cal-next':
+      if (++calM > 12) { calM = 1; calY++; }
+      renderCurrent();
+      break;
+
+    case 'cal-day': showDayDetail(t.dataset.date); break;
+
+    case 'export': {
+      const blob = new Blob([JSON.stringify(DB,null,2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'raidlog_' + localDate() + '.json'; a.click();
+      URL.revokeObjectURL(url);
+      break;
+    }
+
+    case 'import': {
+      if (!await confirm_('Импорт', S.confirmImport)) return;
+      const inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = '.json';
+      inp.onchange = e2 => {
+        const f = e2.target.files[0];
+        if (!f) return;
+        const r = new FileReader();
+        r.onload = ev => {
+          try {
+            const d = JSON.parse(ev.target.result);
+            if (d.schemaVersion === 1 && Array.isArray(d.sessions)) {
+              DB = d; save(); render();
+            }
+          } catch(_) {}
+        };
+        r.readAsText(f);
+      };
+      inp.click();
+      break;
+    }
+
+    case 'reset': {
+      if (!await confirm_('Сброс', S.confirmReset)) return;
+      DB = { schemaVersion: 1, sessions: [] }; save(); render();
+      break;
+    }
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key==='Enter'||e.key===' ') {
+    const t = e.target.closest('[data-a]');
+    if (t && !t.matches('button')) { e.preventDefault(); t.click(); }
+  }
+});
+
+/* ── SAFARI HINT ─────────────────────────────────────────────────────────── */
+(function() {
+  const HINT_KEY = 'raidlog_hint_v1';
+  if (localStorage.getItem(HINT_KEY)) return;
+  const standalone = window.navigator.standalone === true ||
+    window.matchMedia('(display-mode: standalone)').matches;
+  if (standalone) return;
+  const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) && !window.MSStream;
+  const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome|CriOS|FxiOS/.test(navigator.userAgent);
+  if (!isIOS || !isSafari) return;
+
+  const hint = document.createElement('div');
+  hint.className = 'safari-hint';
+  hint.innerHTML = `<div class="sh-title">${S.safari.title}</div>
+    <div>${S.safari.text}</div>
+    <button class="sh-close">${S.safari.close}</button>`;
+  document.body.appendChild(hint);
+  hint.querySelector('.sh-close').addEventListener('click', () => {
+    localStorage.setItem(HINT_KEY, '1');
+    hint.remove();
+  });
+})();
+
+/* ── INIT ────────────────────────────────────────────────────────────────── */
+render();
+</script>
+</body>
+</html>
