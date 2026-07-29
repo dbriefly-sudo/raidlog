@@ -140,15 +140,6 @@ body::after {
 /* SECTION */
 .sec { padding: 14px 16px; }
 
-/* UNLOCK BLOCK */
-.unlock-blk {
-  border: 1px solid var(--brd);
-  padding: 10px 12px;
-  margin-bottom: 14px;
-  background: var(--bg2);
-}
-.unlock-lbl { font-size: 14px; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
-.unlock-item { font-size: 16px; color: var(--fg); font-weight: bold; margin-bottom: 8px; }
 .prog-bar { height: 3px; background: var(--brd); }
 .prog-fill { height: 100%; background: var(--acc); transition: width .4s; }
 .prog-txt { font-size: 14px; color: var(--dim); margin-top: 4px; }
@@ -214,6 +205,8 @@ body::after {
 .xp-lbl { font-size: 14px; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 2px; }
 .xp-lvl { font-size: 24px; color: var(--acc); font-weight: bold; margin-bottom: 6px; }
 .xp-sub { font-size: 14px; color: var(--dim); margin-top: 4px; }
+
+.inv-sub { font-size: 14px; color: var(--dim); letter-spacing: 1px; text-transform: uppercase; padding: 12px 16px 0; }
 
 .inv-grid {
   display: grid;
@@ -540,10 +533,6 @@ const S = {
   achToastPrefix: 'ДОСТИЖЕНИЕ',
   achUnlockedOn: 'Получено',
   activeDaysMo: 'Активных дней в этом месяце',
-  nextReward: 'БЛИЖАЙШАЯ НАГРАДА',
-  allUnlocked: 'Все плановые награды получены',
-  totalSess: 'сессий',
-  actSess: 'сессий активности',
   todaySess: 'Сегодня',
   totalSessLbl: 'Всего',
   completeBtn: 'ЗАВЕРШИТЬ ВЫЛАЗКУ',
@@ -556,6 +545,10 @@ const S = {
   level: 'УРОВЕНЬ',
   xpToNext: 'до след. уровня',
   invEmpty: 'Инвентарь пуст. Выполните вылазку.',
+  invMaterials: 'МАТЕРИАЛЫ',
+  invGear: 'СНАРЯЖЕНИЕ',
+  invCollectibles: 'КОЛЛЕКЦИЯ',
+  invArtifacts: 'АРТЕФАКТЫ',
   detailCnt: 'Количество',
   detailDate: 'Дата находки',
   detailAct: 'Активность',
@@ -601,60 +594,50 @@ const ACTIVITIES = [
    collectible (unique, date+source) / artifact (unique, belt-slot eligible,
    never spent by contracts). dropChancePerSortie(+Deep) only applies to the
    non-material types — it's the special-roll channel the loot system rolls
-   against; Deep is the (not yet reachable) deep-sector variant.
-   `weight` is legacy — the old single-stage weighted rollLoot() still reads
-   it until the loot rewrite lands; it becomes dead once that replaces it. */
+   against; Deep is the (not yet reachable) deep-sector variant. */
 const ITEMS = [
   /* ── Промдвор (Тренировка) ────────────────────────────────────────────── */
-  { id: 'rusty_bolts',    name: 'Горсть ржавых болтов',       rarity: 'common',    type: 'material', weight: 28, activities: ['training'], glyph: '⚙' },
-  { id: 'copper_wire',    name: 'Катушка медного провода',    rarity: 'common',    type: 'material', weight: 26, activities: ['training', 'handwriting'], glyph: '∿' },
-  { id: 'patch_fabric',   name: 'Клочок маскировочной ткани', rarity: 'uncommon',  type: 'material', weight: 13, activities: ['training', 'handwriting'], glyph: '▨' },
-  { id: 'tin_filter',     name: 'Жестяной фильтр',            rarity: 'uncommon',  type: 'material', weight: 11, activities: ['training'], glyph: '⧉' },
-  { id: 'drain_map',      name: 'Карта дренажного сектора',   rarity: 'uncommon',  type: 'material', weight: 10, activities: ['reading', 'training'], glyph: '⌖' },
-  { id: 'stamped_bearing', name: 'Клеймёный подшипник',       rarity: 'rare', type: 'collectible', weight: 5, activities: ['training'], glyph: '◍', dropChancePerSortie: 12 },
-  { id: 'gear_body',     name: 'Бронежилет промзоны', rarity: 'rare',     type: 'gear', slot: 'body',     weight: 5,  activities: ['training'], glyph: '⛨', dropChancePerSortie: 7, dropChancePerSortieDeep: 11 },
-  { id: 'gear_legs',     name: 'Армированные штаны',  rarity: 'rare',     type: 'gear', slot: 'legs',     weight: 5,  activities: ['training'], glyph: '◫', dropChancePerSortie: 7, dropChancePerSortieDeep: 11 },
-  { id: 'gear_hands',    name: 'Рабочие перчатки',    rarity: 'rare',     type: 'gear', slot: 'hands',    weight: 5,  activities: ['training'], glyph: '◠', dropChancePerSortie: 7, dropChancePerSortieDeep: 11 },
-  { id: 'gear_backpack', name: 'Тактический рюкзак',  rarity: 'rare',     type: 'gear', slot: 'backpack', weight: 5,  activities: ['training'], glyph: '⌂', dropChancePerSortie: 7, dropChancePerSortieDeep: 11 },
-  { id: 'pm9',           name: '«ПМ-9»',              rarity: 'uncommon', type: 'gear', slot: 'weapon',   weight: 10, activities: ['training'], glyph: '◎', dropChancePerSortie: 7, dropChancePerSortieDeep: 11 },
-  { id: 'turbogen_fragment', name: 'Осколок довоенного турбогенератора', rarity: 'legendary', type: 'collectible', weight: 1, activities: ['training'], glyph: '✷', dropChancePerSortie: 2, dropChancePerSortieDeep: 4 },
+  { id: 'rusty_bolts',    name: 'Горсть ржавых болтов',       rarity: 'common',    type: 'material', activities: ['training'], glyph: '⚙' },
+  { id: 'copper_wire',    name: 'Катушка медного провода',    rarity: 'common',    type: 'material', activities: ['training', 'handwriting'], glyph: '∿' },
+  { id: 'patch_fabric',   name: 'Клочок маскировочной ткани', rarity: 'uncommon',  type: 'material', activities: ['training', 'handwriting'], glyph: '▨' },
+  { id: 'tin_filter',     name: 'Жестяной фильтр',            rarity: 'uncommon',  type: 'material', activities: ['training'], glyph: '⧉' },
+  { id: 'drain_map',      name: 'Карта дренажного сектора',   rarity: 'uncommon',  type: 'material', activities: ['reading', 'training'], glyph: '⌖' },
+  { id: 'stamped_bearing', name: 'Клеймёный подшипник',       rarity: 'rare', type: 'collectible', activities: ['training'], glyph: '◍', dropChancePerSortie: 12 },
+  { id: 'gear_body',     name: 'Бронежилет промзоны', rarity: 'rare',     type: 'gear', slot: 'body',      activities: ['training'], glyph: '⛨', dropChancePerSortie: 7, dropChancePerSortieDeep: 11 },
+  { id: 'gear_legs',     name: 'Армированные штаны',  rarity: 'rare',     type: 'gear', slot: 'legs',      activities: ['training'], glyph: '◫', dropChancePerSortie: 7, dropChancePerSortieDeep: 11 },
+  { id: 'gear_hands',    name: 'Рабочие перчатки',    rarity: 'rare',     type: 'gear', slot: 'hands',     activities: ['training'], glyph: '◠', dropChancePerSortie: 7, dropChancePerSortieDeep: 11 },
+  { id: 'gear_backpack', name: 'Тактический рюкзак',  rarity: 'rare',     type: 'gear', slot: 'backpack',  activities: ['training'], glyph: '⌂', dropChancePerSortie: 7, dropChancePerSortieDeep: 11 },
+  { id: 'pm9',           name: '«ПМ-9»',              rarity: 'uncommon', type: 'gear', slot: 'weapon',   activities: ['training'], glyph: '◎', dropChancePerSortie: 7, dropChancePerSortieDeep: 11 },
+  { id: 'turbogen_fragment', name: 'Осколок довоенного турбогенератора', rarity: 'legendary', type: 'collectible', activities: ['training'], glyph: '✷', dropChancePerSortie: 2, dropChancePerSortieDeep: 4 },
 
   /* ── Радиовышка (Испанский) ───────────────────────────────────────────── */
-  { id: 'radio_fragment', name: 'Обломок радиоблока',    rarity: 'common',   type: 'material', weight: 28, activities: ['spanish', 'reading'], glyph: '⌁' },
-  { id: 'signal_tape',    name: 'Лента с частотами',     rarity: 'uncommon', type: 'material', weight: 14, activities: ['spanish'], glyph: '≈' },
-  { id: 'sector_pass',    name: 'Просроченный пропуск',  rarity: 'uncommon', type: 'material', weight: 10, activities: ['spanish', 'reading'], glyph: '▣' },
-  { id: 'corroded_badge', name: 'Коррозированный жетон', rarity: 'uncommon', type: 'material', weight: 10, activities: ['reading', 'spanish'], glyph: '⬡' },
-  { id: 'cipher_sheet',   name: 'Шифровальный бланк',    rarity: 'uncommon', type: 'material', weight: 8,  activities: ['spanish', 'handwriting'], glyph: '⌬' },
-  { id: 'gear_head', name: 'Каска радиста',      rarity: 'rare', type: 'gear', slot: 'head', weight: 5, activities: ['spanish'], glyph: '◯', dropChancePerSortie: 7, dropChancePerSortieDeep: 11 },
-  { id: 'gear_face', name: 'Противогаз-фильтр',   rarity: 'rare', type: 'gear', slot: 'face', weight: 5, activities: ['spanish'], glyph: '◒', dropChancePerSortie: 7, dropChancePerSortieDeep: 11 },
-  { id: 'gear_rig',  name: 'Антенная разгрузка',  rarity: 'rare', type: 'gear', slot: 'rig',  weight: 5, activities: ['spanish'], glyph: '⌆', dropChancePerSortie: 7, dropChancePerSortieDeep: 11 },
-  { id: 'dielectric_stabilizer', name: 'Диэлектрический стабилизатор', rarity: 'very_rare', type: 'artifact', weight: 2, activities: ['spanish'], glyph: '⍟', dropChancePerSortie: 8 },
-  { id: 'callsign_tape', name: 'Кассета с позывными', rarity: 'legendary', type: 'collectible', weight: 1, activities: ['spanish'], glyph: '✧', dropChancePerSortie: 2, dropChancePerSortieDeep: 4 },
+  { id: 'radio_fragment', name: 'Обломок радиоблока',    rarity: 'common',   type: 'material', activities: ['spanish', 'reading'], glyph: '⌁' },
+  { id: 'signal_tape',    name: 'Лента с частотами',     rarity: 'uncommon', type: 'material', activities: ['spanish'], glyph: '≈' },
+  { id: 'sector_pass',    name: 'Просроченный пропуск',  rarity: 'uncommon', type: 'material', activities: ['spanish', 'reading'], glyph: '▣' },
+  { id: 'corroded_badge', name: 'Коррозированный жетон', rarity: 'uncommon', type: 'material', activities: ['reading', 'spanish'], glyph: '⬡' },
+  { id: 'cipher_sheet',   name: 'Шифровальный бланк',    rarity: 'uncommon', type: 'material',  activities: ['spanish', 'handwriting'], glyph: '⌬' },
+  { id: 'gear_head', name: 'Каска радиста',      rarity: 'rare', type: 'gear', slot: 'head', activities: ['spanish'], glyph: '◯', dropChancePerSortie: 7, dropChancePerSortieDeep: 11 },
+  { id: 'gear_face', name: 'Противогаз-фильтр',   rarity: 'rare', type: 'gear', slot: 'face', activities: ['spanish'], glyph: '◒', dropChancePerSortie: 7, dropChancePerSortieDeep: 11 },
+  { id: 'gear_rig',  name: 'Антенная разгрузка',  rarity: 'rare', type: 'gear', slot: 'rig',  activities: ['spanish'], glyph: '⌆', dropChancePerSortie: 7, dropChancePerSortieDeep: 11 },
+  { id: 'dielectric_stabilizer', name: 'Диэлектрический стабилизатор', rarity: 'very_rare', type: 'artifact', activities: ['spanish'], glyph: '⍟', dropChancePerSortie: 8 },
+  { id: 'callsign_tape', name: 'Кассета с позывными', rarity: 'legendary', type: 'collectible', activities: ['spanish'], glyph: '✧', dropChancePerSortie: 2, dropChancePerSortieDeep: 4 },
 
   /* ── Архив (Прописи) ──────────────────────────────────────────────────── */
-  { id: 'damp_notebook', name: 'Сырая записная книжка', rarity: 'common', type: 'material', weight: 26, activities: ['handwriting', 'reading'], glyph: '▤' },
-  { id: 'ink_cartridge', name: 'Чернильный картридж',   rarity: 'common', type: 'material', weight: 20, activities: ['handwriting'], glyph: '⌑' },
-  { id: 'registrar_seal', name: 'Печать регистратора', rarity: 'rare', type: 'collectible', weight: 5, activities: ['handwriting'], glyph: '◘', dropChancePerSortie: 12 },
+  { id: 'damp_notebook', name: 'Сырая записная книжка', rarity: 'common', type: 'material', activities: ['handwriting', 'reading'], glyph: '▤' },
+  { id: 'ink_cartridge', name: 'Чернильный картридж',   rarity: 'common', type: 'material', activities: ['handwriting'], glyph: '⌑' },
+  { id: 'registrar_seal', name: 'Печать регистратора', rarity: 'rare', type: 'collectible', activities: ['handwriting'], glyph: '◘', dropChancePerSortie: 12 },
 
   /* ── Книгохранилище (Чтение) ──────────────────────────────────────────── */
-  { id: 'microfiche', name: 'Микрофиша', rarity: 'uncommon', type: 'material', weight: 14, activities: ['reading'], glyph: '▯' },
-  { id: 'catalog_card', name: 'Каталожная карта архива', rarity: 'rare', type: 'collectible', weight: 5, activities: ['reading'], glyph: '▭', dropChancePerSortie: 12 },
+  { id: 'microfiche', name: 'Микрофиша', rarity: 'uncommon', type: 'material', activities: ['reading'], glyph: '▯' },
+  { id: 'catalog_card', name: 'Каталожная карта архива', rarity: 'rare', type: 'collectible', activities: ['reading'], glyph: '▭', dropChancePerSortie: 12 },
 
   /* ── Артефакт (кросс-локационный) ─────────────────────────────────────── */
-  { id: 'void_fragment', name: 'Фрагмент пустоты', rarity: 'legendary', type: 'artifact', weight: 1, activities: ['spanish', 'handwriting', 'training', 'reading'], glyph: '◉', dropChancePerSortie: 2, dropChancePerSortieDeep: 4 },
+  { id: 'void_fragment', name: 'Фрагмент пустоты', rarity: 'legendary', type: 'artifact', activities: ['spanish', 'handwriting', 'training', 'reading'], glyph: '◉', dropChancePerSortie: 2, dropChancePerSortieDeep: 4 },
 
   /* ── Медицина (по чуть-чуть во всех локациях) ─────────────────────────── */
-  { id: 'aidulin',       name: 'Айдулин',           rarity: 'common',   type: 'material', weight: 6, activities: ['spanish', 'handwriting', 'training', 'reading'], glyph: '✚' },
-  { id: 'field_bandage', name: 'Полевой бинт',      rarity: 'common',   type: 'material', weight: 6, activities: ['spanish', 'handwriting', 'training', 'reading'], glyph: '≡' },
-  { id: 'army_medkit',   name: 'Армейская аптечка', rarity: 'uncommon', type: 'material', weight: 4, activities: ['spanish', 'handwriting', 'training', 'reading'], glyph: '✛' },
-];
-
-/* ── UNLOCKS ─────────────────────────────────────────────────────────────── */
-const UNLOCKS = [
-  { id: 'u1', condition: { type: 'total',    count: 3  },                           itemId: 'drain_map'    },
-  { id: 'u2', condition: { type: 'activity', activityId: 'spanish',  count: 3 },   itemId: 'cipher_sheet' },
-  { id: 'u3', condition: { type: 'activity', activityId: 'training', count: 5 },   itemId: 'tin_filter'   },
-  { id: 'u4', condition: { type: 'total',    count: 15 },                           itemId: 'void_fragment' },
+  { id: 'aidulin',       name: 'Айдулин',           rarity: 'common',   type: 'material', activities: ['spanish', 'handwriting', 'training', 'reading'], glyph: '✚' },
+  { id: 'field_bandage', name: 'Полевой бинт',      rarity: 'common',   type: 'material', activities: ['spanish', 'handwriting', 'training', 'reading'], glyph: '≡' },
+  { id: 'army_medkit',   name: 'Армейская аптечка', rarity: 'uncommon', type: 'material', activities: ['spanish', 'handwriting', 'training', 'reading'], glyph: '✛' },
 ];
 
 /* ── ACHIEVEMENTS ────────────────────────────────────────────────────────── */
@@ -968,82 +951,138 @@ function hasRareOrAbove(state) {
   }));
 }
 
-function unlockedIds() {
-  const ids = new Set();
-  DB.sessions.forEach(s => (s.unlockedRewardIds||[]).forEach(id => ids.add(id)));
-  return ids;
+/* ── LOOT ────────────────────────────────────────────────────────────────── */
+/* Card 1 is always common. Card 2 rolls common/uncommon off the shared table.
+   Card 3 tries a special roll (gear/artifact/key part/legendary, each its own
+   flat dropChancePerSortie) and falls back to a card-2-style material roll on
+   miss. Rarity above uncommon only ever comes from the special channel — gear/
+   artifact/collectible items that already exist in discoveries are excluded,
+   so they can never redrop. No pity: misses don't raise future odds. */
+const MATERIAL_RARITY_TABLE = { common: 78, uncommon: 22 };
+
+function isDiscoveredOrOwned(item) { return !!DB.discoveries[item.id]; }
+
+function materialPool(actId, rarity, exclude) {
+  return ITEMS.filter(i => i.type === 'material' && i.rarity === rarity && i.activities.includes(actId) && !exclude.has(i.id));
 }
 
-function nextUnlock() {
-  const got = unlockedIds();
-  const total = sessCount();
-  for (const u of UNLOCKS) {
-    if (got.has(u.id)) continue;
-    const c = u.condition;
-    const current = c.type === 'total'
-      ? Math.min(total, c.count)
-      : Math.min(sessCount(c.activityId), c.count);
-    return { unlock: u, current, needed: c.count, item: byId(u.itemId) };
+function rollMaterialRarity() {
+  return Math.random() * (MATERIAL_RARITY_TABLE.common + MATERIAL_RARITY_TABLE.uncommon) < MATERIAL_RARITY_TABLE.common
+    ? 'common' : 'uncommon';
+}
+
+function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function rollMaterial(actId, rarity, exclude) {
+  const pool = materialPool(actId, rarity, exclude);
+  if (pool.length) return pickRandom(pool);
+  const otherRarity = rarity === 'common' ? 'uncommon' : 'common';
+  const otherPool = materialPool(actId, otherRarity, exclude);
+  return otherPool.length ? pickRandom(otherPool) : null;
+}
+
+function specialPool(actId, predicate, exclude) {
+  return ITEMS.filter(i => predicate(i) && i.activities.includes(actId) && !exclude.has(i.id) && !isDiscoveredOrOwned(i));
+}
+
+function rollSpecial(actId, exclude) {
+  const buckets = [
+    specialPool(actId, i => i.type === 'gear', exclude),
+    specialPool(actId, i => i.type === 'artifact' && i.rarity !== 'legendary', exclude),
+    specialPool(actId, i => i.type === 'collectible' && i.rarity !== 'legendary', exclude),
+    specialPool(actId, i => i.rarity === 'legendary', exclude),
+  ]
+    .filter(pool => pool.length > 0)
+    .map(pool => ({ pool, chance: pool[0].dropChancePerSortie }));
+
+  let r = Math.random() * 100;
+  for (const b of buckets) {
+    if (r < b.chance) return pickRandom(b.pool);
+    r -= b.chance;
   }
   return null;
 }
 
-/* ── LOOT ────────────────────────────────────────────────────────────────── */
-function rollLoot(actId) {
-  const pool = ITEMS.filter(i => i.activities.includes(actId));
+function rollLootV2(actId) {
+  const exclude = new Set();
   const drops = [];
-  for (let k = 0; k < 3; k++) {
-    const total = pool.reduce((s, i) => s + i.weight, 0);
-    let r = Math.random() * total;
-    let picked = pool[pool.length-1];
-    for (const item of pool) { r -= item.weight; if (r <= 0) { picked = item; break; } }
-    drops.push({ instanceId: uid(), itemId: picked.id });
+
+  const c1 = rollMaterial(actId, 'common', exclude);
+  if (c1) { drops.push({ itemId: c1.id }); exclude.add(c1.id); }
+
+  const c2 = rollMaterial(actId, rollMaterialRarity(), exclude);
+  if (c2) { drops.push({ itemId: c2.id }); exclude.add(c2.id); }
+
+  const special = rollSpecial(actId, exclude);
+  if (special) {
+    drops.push({ itemId: special.id });
+    exclude.add(special.id);
+  } else {
+    const c3 = rollMaterial(actId, rollMaterialRarity(), exclude);
+    if (c3) { drops.push({ itemId: c3.id }); exclude.add(c3.id); }
   }
+
   return drops;
 }
 
-function checkUnlocks(newTotal, actCounts) {
-  const got = unlockedIds();
-  return UNLOCKS.filter(u => {
-    if (got.has(u.id)) return false;
-    const c = u.condition;
-    return c.type === 'total' ? newTotal >= c.count : (actCounts[c.activityId]||0) >= c.count;
-  }).map(u => u.id);
+/* ── ACTIONS ─────────────────────────────────────────────────────────────── */
+function applyDrops(drops, actId, dateStr) {
+  drops.forEach(d => {
+    const item = byId(d.itemId);
+    if (!item) return;
+    if (item.type === 'material') {
+      DB.inventory[item.id] = (DB.inventory[item.id] || 0) + 1;
+    } else {
+      DB.discoveries[item.id] = { date: dateStr, source: actId };
+      if (item.type === 'gear' && !DB.gear.owned.includes(item.id)) DB.gear.owned.push(item.id);
+    }
+  });
 }
 
-/* ── ACTIONS ─────────────────────────────────────────────────────────────── */
+function revertDrops(drops) {
+  drops.forEach(d => {
+    const item = byId(d.itemId);
+    if (!item) return;
+    if (item.type === 'material') {
+      const next = (DB.inventory[item.id] || 0) - 1;
+      if (next > 0) DB.inventory[item.id] = next; else delete DB.inventory[item.id];
+    } else {
+      delete DB.discoveries[item.id];
+      if (item.type === 'gear') {
+        const idx = DB.gear.owned.indexOf(item.id);
+        if (idx !== -1) DB.gear.owned.splice(idx, 1);
+      }
+    }
+  });
+}
+
 function completeSortie(actId) {
   const now = new Date();
-  const drops = rollLoot(actId);
-  const newTotal = DB.sessions.length + 1;
-  const actCounts = {};
-  ACTIVITIES.forEach(a => { actCounts[a.id] = sessCount(a.id); });
-  actCounts[actId] = (actCounts[actId]||0) + 1;
-  const newUnlocks = checkUnlocks(newTotal, actCounts);
-
-  const allDrops = [...drops];
-  newUnlocks.forEach(uid_ => {
-    const u = UNLOCKS.find(x => x.id === uid_);
-    if (u) allDrops.push({ instanceId: uid() + '_u', itemId: u.itemId, isUnlock: true });
-  });
+  const dateStr = localDate(now);
+  const drops = rollLootV2(actId);
+  applyDrops(drops, actId, dateStr);
 
   const sess = {
     id: uid(),
     activityId: actId,
     completedAt: now.toISOString(),
-    localDate: localDate(now),
+    localDate: dateStr,
     timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     xpAwarded: 10,
-    drops: allDrops,
-    unlockedRewardIds: newUnlocks,
+    drops,
   };
   DB.sessions.push(sess);
   save();
   return sess;
 }
 
+/* undoLast only ever targets the most recent session (LIFO), and non-material
+   items are only ever discovered once — so reverting its drops is unambiguous */
 function undoLast() {
-  if (DB.sessions.length) { DB.sessions.pop(); save(); }
+  if (!DB.sessions.length) return;
+  const sess = DB.sessions.pop();
+  revertDrops(sess.drops || []);
+  save();
 }
 
 function checkNewAchievements() {
@@ -1093,29 +1132,9 @@ function renderCurrent() {
 function renderSortie(el) {
   const now = new Date();
   const adm = activeDays(now.getFullYear(), now.getMonth()+1).size;
-  const nu = nextUnlock();
   const last = DB.sessions.length ? DB.sessions[DB.sessions.length-1] : null;
 
   let left = '', right = '';
-
-  // Unlock block (right on desktop)
-  if (nu) {
-    const pct = Math.round(nu.current / nu.needed * 100);
-    const condLbl = nu.unlock.condition.type === 'total'
-      ? nu.needed + ' ' + S.totalSess
-      : nu.needed + ' ' + S.actSess + ' «' + (byAct(nu.unlock.condition.activityId)?.name||'') + '»';
-    right += `<div class="unlock-blk">
-      <div class="unlock-lbl">${S.nextReward}</div>
-      <div class="unlock-item">${nu.item?.name||''}</div>
-      <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>
-      <div class="prog-txt"><b>${nu.current} / ${nu.needed}</b> — ${condLbl}</div>
-    </div>`;
-  } else {
-    right += `<div class="unlock-blk">
-      <div class="unlock-lbl">${S.nextReward}</div>
-      <div class="unlock-item" style="color:var(--dim)">${S.allUnlocked}</div>
-    </div>`;
-  }
 
   // Activities (left on desktop)
   ACTIVITIES.forEach(a => {
@@ -1144,22 +1163,19 @@ function renderSortie(el) {
 }
 
 /* ── INVENTORY ───────────────────────────────────────────────────────────── */
-function buildInv() {
-  const map = {};
-  DB.sessions.forEach(sess => {
-    (sess.drops||[]).forEach(d => {
-      if (!map[d.itemId]) map[d.itemId] = [];
-      map[d.itemId].push({ instanceId: d.instanceId, completedAt: sess.completedAt, activityId: sess.activityId });
-    });
-  });
-  return map;
+function invSection(title, items, cntFn) {
+  if (!items.length) return '';
+  const cards = items.map(item => `<div class="inv-item" tabindex="0" data-r="${item.rarity}" data-a="inv-detail" data-iid="${item.id}">
+      <span class="i-cnt">${cntFn(item)}</span>
+      <div class="i-icon">${item.glyph}</div>
+      <div class="i-name">${item.name}</div>
+    </div>`).join('');
+  return `<div class="inv-sub">${title}</div><div class="inv-grid">${cards}</div>`;
 }
 
 function renderInventory(el) {
   const li = levelInfo(totalXP());
   const pct = li.xpForLevel ? Math.round(li.xpIntoLevel / li.xpForLevel * 100) : 100;
-  const inv = buildInv();
-  const hasItems = ITEMS.some(i => inv[i.id]);
 
   let html = `<div class="xp-blk">
     <div class="xp-lbl">${rankForLevel(li.level)}</div>
@@ -1168,20 +1184,18 @@ function renderInventory(el) {
     <div class="xp-sub">${li.xpIntoLevel} / ${li.xpForLevel} XP | ${li.xpToNext} ${S.xpToNext}</div>
   </div>`;
 
-  if (!hasItems) {
+  const materials    = ITEMS.filter(i => i.type === 'material'   && DB.inventory[i.id] > 0);
+  const gear         = ITEMS.filter(i => i.type === 'gear'       && DB.discoveries[i.id]);
+  const collectibles = ITEMS.filter(i => i.type === 'collectible' && DB.discoveries[i.id]);
+  const artifacts    = ITEMS.filter(i => i.type === 'artifact'   && DB.discoveries[i.id]);
+
+  if (!materials.length && !gear.length && !collectibles.length && !artifacts.length) {
     html += `<div class="inv-empty">${S.invEmpty}</div>`;
   } else {
-    html += '<div class="inv-grid">';
-    ITEMS.forEach(item => {
-      const instances = inv[item.id];
-      if (!instances) return;
-      html += `<div class="inv-item" tabindex="0" data-r="${item.rarity}" data-a="inv-detail" data-iid="${item.id}">
-        <span class="i-cnt">x${instances.length}</span>
-        <div class="i-icon">${item.glyph}</div>
-        <div class="i-name">${item.name}</div>
-      </div>`;
-    });
-    html += '</div>';
+    html += invSection(S.invMaterials,    materials,    item => 'x' + DB.inventory[item.id]);
+    html += invSection(S.invGear,         gear,         () => '');
+    html += invSection(S.invCollectibles, collectibles, () => '');
+    html += invSection(S.invArtifacts,    artifacts,    () => '');
   }
   el.innerHTML = html;
 }
@@ -1312,9 +1326,15 @@ function confirm_(title, text) {
 function showInvDetail(itemId) {
   const item = byId(itemId);
   if (!item) return;
-  const inv = buildInv();
-  const instances = inv[itemId] || [];
-  const last = instances[instances.length-1];
+
+  const rows = item.type === 'material'
+    ? `${S.detailCnt}: <span>${DB.inventory[itemId] || 0}</span>`
+    : (() => {
+        const disc = DB.discoveries[itemId];
+        return `${S.detailDate}: <span>${disc ? fmtDate(disc.date) : '—'}</span><br>
+        ${S.detailAct}: <span>${disc ? (byAct(disc.source)?.name||'—') : '—'}</span>`;
+      })();
+
   mc.innerHTML = `<div class="ov" id="det-ov">
     <div class="mbox">
       <div class="id-hdr">
@@ -1324,11 +1344,7 @@ function showInvDetail(itemId) {
           <div class="id-rarity" style="color:var(--r-${item.rarity})">${S.rarities[item.rarity]}</div>
         </div>
       </div>
-      <div class="id-rows">
-        ${S.detailCnt}: <span>${instances.length}</span><br>
-        ${S.detailDate}: <span>${last ? fmtDateTime(last.completedAt) : '—'}</span><br>
-        ${S.detailAct}: <span>${last ? (byAct(last.activityId)?.name||'—') : '—'}</span>
-      </div>
+      <div class="id-rows">${rows}</div>
       <div class="m-btns">
         <button class="m-btn pri" data-a="close-modal">${S.closeBtn}</button>
       </div>
