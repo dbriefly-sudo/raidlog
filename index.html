@@ -151,6 +151,16 @@ body::after {
 .prog-txt { font-size: 14px; color: var(--dim); margin-top: 4px; }
 .prog-txt b { color: var(--fg); font-weight: bold; }
 
+/* ACHIEVEMENT CARD */
+.ach-card { border: 1px solid var(--brd); background: var(--bg2); padding: 10px 12px; margin-bottom: 10px; }
+.ach-title { font-size: 16px; color: var(--fg); font-weight: bold; margin-bottom: 4px; }
+.ach-card .prog-bar { margin-top: 6px; }
+.ach-card .prog-txt { margin-bottom: 4px; }
+.ach-desc { font-size: 14px; color: var(--dim); line-height: 1.4; }
+.ach-date { font-size: 14px; color: var(--dim); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+.ach-card.done { border-color: var(--acc); }
+.ach-card.done .ach-title { color: var(--acc); }
+
 /* ACTIVITY CARD */
 .act-card { border: 1px solid var(--brd); margin-bottom: 11px; background: var(--bg2); }
 .act-hdr { padding: 10px 12px 6px; border-bottom: 1px solid var(--brd); }
@@ -418,6 +428,22 @@ body::after {
 .loot-card[data-r="very_rare"] .lc-rarity { color: var(--r-very_rare); }
 .loot-card[data-r="legendary"] .lc-rarity { color: var(--r-legendary); }
 
+/* achievement toast queue */
+.ach-queue { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.ach-toast {
+  border: 1px solid var(--acc);
+  background: var(--bg3);
+  color: var(--acc);
+  font-size: 14px; letter-spacing: 1px;
+  padding: 10px 14px;
+  text-transform: uppercase;
+  opacity: 0; transform: translateY(16px);
+}
+.ach-toast.vis {
+  opacity: 1; transform: translateY(0);
+  transition: opacity .3s, transform .3s;
+}
+
 .loot-acts { display: flex; gap: 8px; }
 .l-btn {
   padding: 10px 20px;
@@ -457,6 +483,7 @@ body::after {
 @media (prefers-reduced-motion: reduce) {
   .loot-card { transition: none !important; filter: none !important; }
   .loot-card.glow { animation: none !important; }
+  .ach-toast { transition: none !important; }
   .prog-fill  { transition: none !important; }
 }
 </style>
@@ -493,7 +520,8 @@ body::after {
 const S = {
   tabs: ['ВЫЛАЗКА','ИНВЕНТАРЬ','КАЛЕНДАРЬ','АЧИВКИ'],
   systemTitle: 'СИСТЕМА',
-  achComingSoon: 'Список достижений скоро появится.',
+  achToastPrefix: 'ДОСТИЖЕНИЕ',
+  achUnlockedOn: 'Получено',
   activeDaysMo: 'Активных дней в этом месяце',
   nextReward: 'БЛИЖАЙШАЯ НАГРАДА',
   allUnlocked: 'Все плановые награды получены',
@@ -579,15 +607,72 @@ const UNLOCKS = [
   { id: 'u4', condition: { type: 'total',    count: 15 },                           itemId: 'void_fragment' },
 ];
 
+/* ── ACHIEVEMENTS ────────────────────────────────────────────────────────── */
+/* Дни считаются накопительно (всего), а не подряд — конфликт 1 решён в пользу
+   накопительной логики, "подряд/consecutive" здесь не используется. */
+const ACHIEVEMENTS = [
+  // ОБЩИЕ
+  { id: 'first_sortie', title: 'Первый выход', desc: 'Первая вылазка',
+    check: st => st.sessions.length >= 1 },
+  { id: 'sorties_10', title: 'Обжился', desc: '10 вылазок',
+    check: st => st.sessions.length >= 10,
+    progress: st => ({ cur: Math.min(st.sessions.length, 10), max: 10 }) },
+  { id: 'sorties_50', title: 'Ветеран периметра', desc: '50 вылазок',
+    check: st => st.sessions.length >= 50,
+    progress: st => ({ cur: Math.min(st.sessions.length, 50), max: 50 }) },
+  { id: 'all_locations', title: 'Разведаны все зоны', desc: 'Хотя бы одна вылазка в каждой из 4 локаций',
+    check: st => ACTIVITIES.every(a => actSessions(st, a.id).length > 0),
+    progress: st => ({ cur: ACTIVITIES.filter(a => actSessions(st, a.id).length > 0).length, max: ACTIVITIES.length }) },
+  { id: 'days_3', title: 'На связи', desc: '3 активных дня (всего)',
+    check: st => activeDaySet(st).size >= 3,
+    progress: st => ({ cur: Math.min(activeDaySet(st).size, 3), max: 3 }) },
+  { id: 'days_7', title: 'Оператор', desc: '7 активных дней (всего)',
+    check: st => activeDaySet(st).size >= 7,
+    progress: st => ({ cur: Math.min(activeDaySet(st).size, 7), max: 7 }) },
+  { id: 'days_10_month', title: 'Плотный месяц', desc: '10 активных дней в одном календарном месяце',
+    check: st => bestMonthActiveDayCount(st) >= 10,
+    progress: st => ({ cur: Math.min(bestMonthActiveDayCount(st), 10), max: 10 }) },
+  { id: 'first_rare', title: 'Первая редкость', desc: 'Первый предмет редкости rare и выше',
+    check: st => hasRareOrAbove(st) },
+
+  // ТЕМАТИЧЕСКИЕ ПО ЛОКАЦИЯМ
+  { id: 'es_first', title: 'Primer contacto', desc: 'Первая вылазка: Испанский',
+    check: st => actSessions(st, 'spanish').length >= 1 },
+  { id: 'es_10', title: 'La voz del sector', desc: '10 вылазок: Испанский',
+    check: st => actSessions(st, 'spanish').length >= 10,
+    progress: st => ({ cur: Math.min(actSessions(st, 'spanish').length, 10), max: 10 }) },
+  { id: 'write_first', title: 'Твёрдая рука', desc: 'Первая вылазка: Прописи',
+    check: st => actSessions(st, 'handwriting').length >= 1 },
+  { id: 'write_10', title: 'Каллиграф периметра', desc: '10 вылазок: Прописи',
+    check: st => actSessions(st, 'handwriting').length >= 10,
+    progress: st => ({ cur: Math.min(actSessions(st, 'handwriting').length, 10), max: 10 }) },
+  { id: 'gym_first', title: 'Разогрев', desc: 'Первая вылазка: Тренировка',
+    check: st => actSessions(st, 'training').length >= 1 },
+  { id: 'gym_10', title: 'Тягловая сила', desc: '10 вылазок: Тренировка',
+    check: st => actSessions(st, 'training').length >= 10,
+    progress: st => ({ cur: Math.min(actSessions(st, 'training').length, 10), max: 10 }) },
+  { id: 'read_first', title: 'Первая страница', desc: 'Первая вылазка: Чтение',
+    check: st => actSessions(st, 'reading').length >= 1 },
+  { id: 'read_10', title: 'Архивариус', desc: '10 вылазок: Чтение',
+    check: st => actSessions(st, 'reading').length >= 10,
+    progress: st => ({ cur: Math.min(actSessions(st, 'reading').length, 10), max: 10 }) },
+];
+
 /* ── STORAGE ─────────────────────────────────────────────────────────────── */
 const KEY = 'raidlog_v1';
+
+function normalizeDB(d) {
+  if (!d.achievements || typeof d.achievements !== 'object') d.achievements = { unlocked: {} };
+  if (!d.achievements.unlocked || typeof d.achievements.unlocked !== 'object') d.achievements.unlocked = {};
+  return d;
+}
 
 function load() {
   try {
     const d = JSON.parse(localStorage.getItem(KEY));
-    if (d && d.schemaVersion === 1 && Array.isArray(d.sessions)) return d;
+    if (d && d.schemaVersion === 1 && Array.isArray(d.sessions)) return normalizeDB(d);
   } catch(_) {}
-  return { schemaVersion: 1, sessions: [] };
+  return { schemaVersion: 1, sessions: [], achievements: { unlocked: {} } };
 }
 
 function save() { localStorage.setItem(KEY, JSON.stringify(DB)); }
@@ -611,6 +696,10 @@ function fmtDateTime(iso) {
 
 function fmtTime(iso) {
   return new Date(iso).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+}
+
+function fmtDate(iso) {
+  return new Date(iso).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'});
 }
 
 const byId = id => ITEMS.find(i => i.id === id);
@@ -674,6 +763,39 @@ function bestMonthEver() {
     if (!best || count > best.count) best = { key, count };
   });
   return best;
+}
+
+/* achievement check helpers — take `state` (a DB-shaped object) so
+   check(state)/progress(state) never reach for the global DB directly */
+function actSessions(state, actId) {
+  return state.sessions.filter(s => s.activityId === actId);
+}
+
+function activeDaySet(state) {
+  const days = new Set();
+  state.sessions.forEach(s => { if (s.localDate) days.add(s.localDate); });
+  return days;
+}
+
+function bestMonthActiveDayCount(state) {
+  const byMonth = {};
+  state.sessions.forEach(s => {
+    if (!s.localDate) return;
+    const key = s.localDate.slice(0, 7);
+    (byMonth[key] || (byMonth[key] = new Set())).add(s.localDate);
+  });
+  let max = 0;
+  Object.values(byMonth).forEach(set => { if (set.size > max) max = set.size; });
+  return max;
+}
+
+const RARITY_ORDER = ['common', 'uncommon', 'rare', 'very_rare', 'legendary'];
+
+function hasRareOrAbove(state) {
+  return state.sessions.some(s => (s.drops||[]).some(d => {
+    const item = byId(d.itemId);
+    return item && RARITY_ORDER.indexOf(item.rarity) >= RARITY_ORDER.indexOf('rare');
+  }));
 }
 
 function unlockedIds() {
@@ -752,6 +874,18 @@ function completeSortie(actId) {
 
 function undoLast() {
   if (DB.sessions.length) { DB.sessions.pop(); save(); }
+}
+
+function checkNewAchievements() {
+  const unlocked = DB.achievements.unlocked;
+  const now = new Date().toISOString();
+  const fresh = [];
+  ACHIEVEMENTS.forEach(a => {
+    if (unlocked[a.id]) return;
+    if (a.check(DB)) { unlocked[a.id] = now; fresh.push(a); }
+  });
+  if (fresh.length) save();
+  return fresh;
 }
 
 /* ── STATE ───────────────────────────────────────────────────────────────── */
@@ -926,7 +1060,33 @@ function renderCalendar(el) {
 
 /* ── ACHIEVEMENTS ────────────────────────────────────────────────────────── */
 function renderAchievements(el) {
-  el.innerHTML = `<div class="inv-empty">${S.achComingSoon}</div>`;
+  const unlocked = DB.achievements.unlocked;
+  const pending = ACHIEVEMENTS.filter(a => !unlocked[a.id]);
+  const done = ACHIEVEMENTS.filter(a => unlocked[a.id])
+    .sort((a, b) => unlocked[b.id].localeCompare(unlocked[a.id]));
+
+  let html = '';
+  pending.forEach(a => {
+    const p = a.progress ? a.progress(DB) : null;
+    const progHtml = p
+      ? `<div class="prog-bar"><div class="prog-fill" style="width:${Math.round(p.cur/p.max*100)}%"></div></div>
+         <div class="prog-txt"><b>${p.cur} / ${p.max}</b></div>`
+      : '';
+    html += `<div class="ach-card">
+      <div class="ach-title">${a.title}</div>
+      ${progHtml}
+      <div class="ach-desc">${a.desc}</div>
+    </div>`;
+  });
+  done.forEach(a => {
+    html += `<div class="ach-card done">
+      <div class="ach-title">${a.title}</div>
+      <div class="ach-date">${S.achUnlockedOn}: ${fmtDate(unlocked[a.id])}</div>
+      <div class="ach-desc">${a.desc}</div>
+    </div>`;
+  });
+
+  el.innerHTML = `<div class="sec">${html}</div>`;
 }
 
 /* ── SYSTEM ──────────────────────────────────────────────────────────────── */
@@ -1025,8 +1185,9 @@ function showDayDetail(date) {
 }
 
 /* ── LOOT REVEAL ─────────────────────────────────────────────────────────── */
-function showLoot(session) {
+function showLoot(session, newAchievements) {
   const drops = session.drops || [];
+  const achs = newAchievements || [];
   const rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const cardsHtml = drops.map((d, i) => {
@@ -1042,6 +1203,7 @@ function showLoot(session) {
   mc.innerHTML = `<div class="loot-ov">
     <div class="loot-title">${S.lootTitle}</div>
     <div class="loot-cards" id="lc">${cardsHtml}</div>
+    <div class="ach-queue" id="ach-queue"></div>
     <div class="loot-acts">
       ${!rm ? `<button class="l-btn" id="skip-btn">${S.skipAnim}</button>` : ''}
       <button class="l-btn pri" id="close-loot" ${!rm?'style="display:none"':''}>${S.closeLoot}</button>
@@ -1051,17 +1213,41 @@ function showLoot(session) {
   const cards = mc.querySelectorAll('.loot-card');
   const closeBtn = mc.querySelector('#close-loot');
   const skipBtn  = mc.querySelector('#skip-btn');
+  const achQueueEl = mc.querySelector('#ach-queue');
+
+  function queueAchievements() {
+    let i = 0;
+    function showNext() {
+      if (i >= achs.length) return;
+      const a = achs[i++];
+      const toast = document.createElement('div');
+      toast.className = 'ach-toast';
+      toast.textContent = '>> ' + S.achToastPrefix + ': ' + a.title;
+      achQueueEl.appendChild(toast);
+      requestAnimationFrame(() => toast.classList.add('vis'));
+      setTimeout(showNext, 900);
+    }
+    showNext();
+  }
+
+  let revealDone = false;
+  function finishReveal() {
+    if (revealDone) return;
+    revealDone = true;
+    if (skipBtn) skipBtn.style.display = 'none';
+    closeBtn.style.display = '';
+    queueAchievements();
+  }
 
   function revealAll() {
     cards.forEach(c => { c.classList.add('vis'); setTimeout(() => c.classList.add('glow'), 60); });
-    if (skipBtn) skipBtn.style.display = 'none';
-    closeBtn.style.display = '';
+    finishReveal();
   }
 
   if (!rm) {
     let i = 0;
     function next() {
-      if (i >= cards.length) { if (skipBtn) skipBtn.style.display='none'; closeBtn.style.display=''; return; }
+      if (i >= cards.length) { finishReveal(); return; }
       const c = cards[i];
       c.classList.add('vis');
       const r = c.dataset.r;
@@ -1073,6 +1259,8 @@ function showLoot(session) {
     }
     setTimeout(next, 250);
     if (skipBtn) skipBtn.addEventListener('click', revealAll);
+  } else {
+    finishReveal();
   }
 
   closeBtn.addEventListener('click', () => { sortieBusy = false; mc.innerHTML = ''; render(); });
@@ -1114,8 +1302,9 @@ document.addEventListener('click', async e => {
         }
       }
       const sess = completeSortie(actId);
+      const newAch = checkNewAchievements();
       renderHeader();
-      showLoot(sess);
+      showLoot(sess, newAch);
       break;
     }
 
@@ -1161,7 +1350,7 @@ document.addEventListener('click', async e => {
           try {
             const d = JSON.parse(ev.target.result);
             if (d.schemaVersion === 1 && Array.isArray(d.sessions)) {
-              DB = d; save(); render();
+              DB = normalizeDB(d); save(); render();
             }
           } catch(_) {}
         };
@@ -1173,7 +1362,7 @@ document.addEventListener('click', async e => {
 
     case 'reset': {
       if (!await confirm_('Сброс', S.confirmReset)) return;
-      DB = { schemaVersion: 1, sessions: [] }; save(); render();
+      DB = { schemaVersion: 1, sessions: [], achievements: { unlocked: {} } }; save(); render();
       break;
     }
   }
