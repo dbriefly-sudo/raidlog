@@ -597,23 +597,56 @@ const ACTIVITIES = [
 ];
 
 /* ── ITEMS ───────────────────────────────────────────────────────────────── */
+/* type: material (stacks, repeatable) / gear (slot, unique, never redrops) /
+   collectible (unique, date+source) / artifact (unique, belt-slot eligible,
+   never spent by contracts). dropChancePerSortie(+Deep) only applies to the
+   non-material types — it's the special-roll channel the loot system rolls
+   against; Deep is the (not yet reachable) deep-sector variant.
+   `weight` is legacy — the old single-stage weighted rollLoot() still reads
+   it until the loot rewrite lands; it becomes dead once that replaces it. */
 const ITEMS = [
-  // Хлам
-  { id: 'rusty_bolts',    name: 'Горсть ржавых болтов',       rarity: 'common',    weight: 35, activities: ['training'], glyph: '⚙' },
-  { id: 'radio_fragment', name: 'Обломок радиоблока',          rarity: 'common',    weight: 30, activities: ['spanish', 'reading'], glyph: '⌁' },
-  { id: 'damp_notebook',  name: 'Сырая записная книжка',       rarity: 'common',    weight: 28, activities: ['handwriting', 'reading'], glyph: '▤' },
-  // Ресурсы
-  { id: 'copper_wire',    name: 'Катушка медного провода',     rarity: 'common',    weight: 26, activities: ['training', 'handwriting'], glyph: '∿' },
-  { id: 'signal_tape',    name: 'Лента с частотами',           rarity: 'uncommon',  weight: 14, activities: ['spanish'], glyph: '≈' },
-  { id: 'patch_fabric',   name: 'Клочок маскировочной ткани',  rarity: 'uncommon',  weight: 13, activities: ['training', 'handwriting'], glyph: '▨' },
-  { id: 'tin_filter',     name: 'Жестяной фильтр',             rarity: 'uncommon',  weight: 11, activities: ['training'], glyph: '⧉' },
-  // Снаряжение
-  { id: 'drain_map',      name: 'Карта дренажного сектора',    rarity: 'rare',      weight: 6,  activities: ['reading', 'training'], glyph: '⌖' },
-  { id: 'sector_pass',    name: 'Просроченный пропуск',        rarity: 'rare',      weight: 5,  activities: ['spanish', 'reading'], glyph: '▣' },
-  { id: 'corroded_badge', name: 'Коррозированный жетон',       rarity: 'rare',      weight: 5,  activities: ['reading', 'spanish'], glyph: '⬡' },
-  { id: 'cipher_sheet',   name: 'Шифровальный бланк',          rarity: 'very_rare', weight: 3,  activities: ['spanish', 'handwriting'], glyph: '⌬' },
-  // Артефакт
-  { id: 'void_fragment',  name: 'Фрагмент пустоты',            rarity: 'legendary', weight: 1,  activities: ['spanish', 'handwriting', 'training', 'reading'], glyph: '◉' },
+  /* ── Промдвор (Тренировка) ────────────────────────────────────────────── */
+  { id: 'rusty_bolts',    name: 'Горсть ржавых болтов',       rarity: 'common',    type: 'material', weight: 28, activities: ['training'], glyph: '⚙' },
+  { id: 'copper_wire',    name: 'Катушка медного провода',    rarity: 'common',    type: 'material', weight: 26, activities: ['training', 'handwriting'], glyph: '∿' },
+  { id: 'patch_fabric',   name: 'Клочок маскировочной ткани', rarity: 'uncommon',  type: 'material', weight: 13, activities: ['training', 'handwriting'], glyph: '▨' },
+  { id: 'tin_filter',     name: 'Жестяной фильтр',            rarity: 'uncommon',  type: 'material', weight: 11, activities: ['training'], glyph: '⧉' },
+  { id: 'drain_map',      name: 'Карта дренажного сектора',   rarity: 'uncommon',  type: 'material', weight: 10, activities: ['reading', 'training'], glyph: '⌖' },
+  { id: 'stamped_bearing', name: 'Клеймёный подшипник',       rarity: 'rare', type: 'collectible', weight: 5, activities: ['training'], glyph: '◍', dropChancePerSortie: 12 },
+  { id: 'gear_body',     name: 'Бронежилет промзоны', rarity: 'rare',     type: 'gear', slot: 'body',     weight: 5,  activities: ['training'], glyph: '⛨', dropChancePerSortie: 7, dropChancePerSortieDeep: 11 },
+  { id: 'gear_legs',     name: 'Армированные штаны',  rarity: 'rare',     type: 'gear', slot: 'legs',     weight: 5,  activities: ['training'], glyph: '◫', dropChancePerSortie: 7, dropChancePerSortieDeep: 11 },
+  { id: 'gear_hands',    name: 'Рабочие перчатки',    rarity: 'rare',     type: 'gear', slot: 'hands',    weight: 5,  activities: ['training'], glyph: '◠', dropChancePerSortie: 7, dropChancePerSortieDeep: 11 },
+  { id: 'gear_backpack', name: 'Тактический рюкзак',  rarity: 'rare',     type: 'gear', slot: 'backpack', weight: 5,  activities: ['training'], glyph: '⌂', dropChancePerSortie: 7, dropChancePerSortieDeep: 11 },
+  { id: 'pm9',           name: '«ПМ-9»',              rarity: 'uncommon', type: 'gear', slot: 'weapon',   weight: 10, activities: ['training'], glyph: '◎', dropChancePerSortie: 7, dropChancePerSortieDeep: 11 },
+  { id: 'turbogen_fragment', name: 'Осколок довоенного турбогенератора', rarity: 'legendary', type: 'collectible', weight: 1, activities: ['training'], glyph: '✷', dropChancePerSortie: 2, dropChancePerSortieDeep: 4 },
+
+  /* ── Радиовышка (Испанский) ───────────────────────────────────────────── */
+  { id: 'radio_fragment', name: 'Обломок радиоблока',    rarity: 'common',   type: 'material', weight: 28, activities: ['spanish', 'reading'], glyph: '⌁' },
+  { id: 'signal_tape',    name: 'Лента с частотами',     rarity: 'uncommon', type: 'material', weight: 14, activities: ['spanish'], glyph: '≈' },
+  { id: 'sector_pass',    name: 'Просроченный пропуск',  rarity: 'uncommon', type: 'material', weight: 10, activities: ['spanish', 'reading'], glyph: '▣' },
+  { id: 'corroded_badge', name: 'Коррозированный жетон', rarity: 'uncommon', type: 'material', weight: 10, activities: ['reading', 'spanish'], glyph: '⬡' },
+  { id: 'cipher_sheet',   name: 'Шифровальный бланк',    rarity: 'uncommon', type: 'material', weight: 8,  activities: ['spanish', 'handwriting'], glyph: '⌬' },
+  { id: 'gear_head', name: 'Каска радиста',      rarity: 'rare', type: 'gear', slot: 'head', weight: 5, activities: ['spanish'], glyph: '◯', dropChancePerSortie: 7, dropChancePerSortieDeep: 11 },
+  { id: 'gear_face', name: 'Противогаз-фильтр',   rarity: 'rare', type: 'gear', slot: 'face', weight: 5, activities: ['spanish'], glyph: '◒', dropChancePerSortie: 7, dropChancePerSortieDeep: 11 },
+  { id: 'gear_rig',  name: 'Антенная разгрузка',  rarity: 'rare', type: 'gear', slot: 'rig',  weight: 5, activities: ['spanish'], glyph: '⌆', dropChancePerSortie: 7, dropChancePerSortieDeep: 11 },
+  { id: 'dielectric_stabilizer', name: 'Диэлектрический стабилизатор', rarity: 'very_rare', type: 'artifact', weight: 2, activities: ['spanish'], glyph: '⍟', dropChancePerSortie: 8 },
+  { id: 'callsign_tape', name: 'Кассета с позывными', rarity: 'legendary', type: 'collectible', weight: 1, activities: ['spanish'], glyph: '✧', dropChancePerSortie: 2, dropChancePerSortieDeep: 4 },
+
+  /* ── Архив (Прописи) ──────────────────────────────────────────────────── */
+  { id: 'damp_notebook', name: 'Сырая записная книжка', rarity: 'common', type: 'material', weight: 26, activities: ['handwriting', 'reading'], glyph: '▤' },
+  { id: 'ink_cartridge', name: 'Чернильный картридж',   rarity: 'common', type: 'material', weight: 20, activities: ['handwriting'], glyph: '⌑' },
+  { id: 'registrar_seal', name: 'Печать регистратора', rarity: 'rare', type: 'collectible', weight: 5, activities: ['handwriting'], glyph: '◘', dropChancePerSortie: 12 },
+
+  /* ── Книгохранилище (Чтение) ──────────────────────────────────────────── */
+  { id: 'microfiche', name: 'Микрофиша', rarity: 'uncommon', type: 'material', weight: 14, activities: ['reading'], glyph: '▯' },
+  { id: 'catalog_card', name: 'Каталожная карта архива', rarity: 'rare', type: 'collectible', weight: 5, activities: ['reading'], glyph: '▭', dropChancePerSortie: 12 },
+
+  /* ── Артефакт (кросс-локационный) ─────────────────────────────────────── */
+  { id: 'void_fragment', name: 'Фрагмент пустоты', rarity: 'legendary', type: 'artifact', weight: 1, activities: ['spanish', 'handwriting', 'training', 'reading'], glyph: '◉', dropChancePerSortie: 2, dropChancePerSortieDeep: 4 },
+
+  /* ── Медицина (по чуть-чуть во всех локациях) ─────────────────────────── */
+  { id: 'aidulin',       name: 'Айдулин',           rarity: 'common',   type: 'material', weight: 6, activities: ['spanish', 'handwriting', 'training', 'reading'], glyph: '✚' },
+  { id: 'field_bandage', name: 'Полевой бинт',      rarity: 'common',   type: 'material', weight: 6, activities: ['spanish', 'handwriting', 'training', 'reading'], glyph: '≡' },
+  { id: 'army_medkit',   name: 'Армейская аптечка', rarity: 'uncommon', type: 'material', weight: 4, activities: ['spanish', 'handwriting', 'training', 'reading'], glyph: '✛' },
 ];
 
 /* ── UNLOCKS ─────────────────────────────────────────────────────────────── */
