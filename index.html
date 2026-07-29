@@ -53,6 +53,17 @@ body::before {
 /* Vignette removed: it was darkening screen edges enough to drop text below
    readable contrast outdoors. */
 
+/* subtle noise texture, fainter than the scanlines above */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  opacity: .02;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 8999;
+}
+
 #app { display: flex; flex-direction: column; min-height: 100dvh; padding-top: var(--st); }
 
 /* HEADER */
@@ -361,16 +372,17 @@ body::before {
   align-items: center; justify-content: center;
   padding: 10px; text-align: center;
   opacity: 0; transform: translateY(12px);
+  filter: blur(6px);
 }
 .loot-card.vis {
-  opacity: 1; transform: translateY(0);
-  transition: opacity .35s, transform .35s, box-shadow .35s;
+  opacity: 1; transform: translateY(0); filter: blur(0);
+  transition: opacity .35s, transform .35s, filter .35s, box-shadow .35s;
 }
-.loot-card[data-r="common"]    { border-color: var(--r-common); }
-.loot-card[data-r="uncommon"]  { border-color: var(--r-uncommon); }
-.loot-card[data-r="rare"]      { border-color: var(--r-rare); }
-.loot-card[data-r="very_rare"] { border-color: var(--r-very_rare); }
-.loot-card[data-r="legendary"] { border-color: var(--r-legendary); }
+.loot-card[data-r="common"]    { border-color: var(--r-common);    --glow: var(--r-common); }
+.loot-card[data-r="uncommon"]  { border-color: var(--r-uncommon);  --glow: var(--r-uncommon); }
+.loot-card[data-r="rare"]      { border-color: var(--r-rare);      --glow: var(--r-rare); }
+.loot-card[data-r="very_rare"] { border-color: var(--r-very_rare); --glow: var(--r-very_rare); }
+.loot-card[data-r="legendary"] { border-color: var(--r-legendary); --glow: var(--r-legendary); }
 
 .loot-card.glow[data-r="common"]    { box-shadow: 0 0 12px var(--r-common); }
 .loot-card.glow[data-r="uncommon"]  { box-shadow: 0 0 14px var(--r-uncommon); }
@@ -378,10 +390,18 @@ body::before {
 .loot-card.glow[data-r="very_rare"] { box-shadow: 0 0 20px var(--r-very_rare), 0 0 40px rgba(168,136,207,.4); }
 .loot-card.glow[data-r="legendary"] { box-shadow: 0 0 28px var(--r-legendary), 0 0 56px rgba(232,160,96,.5); }
 
+/* glow pulses once on reveal, then settles into the steady glow above */
+@keyframes glow-pulse {
+  0%   { box-shadow: 0 0 0 transparent; }
+  45%  { box-shadow: 0 0 40px var(--glow), 0 0 70px var(--glow); }
+  100% { box-shadow: 0 0 12px var(--glow); }
+}
+.loot-card.glow { animation: glow-pulse .6s ease-out 1; }
+
 .lc-icon {
-  width: 44px; height: 44px;
+  width: 54px; height: 54px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 21px; font-weight: bold; margin-bottom: 8px;
+  font-size: 28px; font-weight: bold; margin-bottom: 8px;
   background: var(--r-common); color: #111;
 }
 .loot-card[data-r="uncommon"]  .lc-icon { background: var(--r-uncommon); }
@@ -434,7 +454,8 @@ body::before {
 
 /* REDUCED MOTION */
 @media (prefers-reduced-motion: reduce) {
-  .loot-card { transition: none !important; }
+  .loot-card { transition: none !important; filter: none !important; }
+  .loot-card.glow { animation: none !important; }
   .prog-fill  { transition: none !important; }
 }
 </style>
@@ -523,30 +544,30 @@ const S = {
 
 /* ── ACTIVITIES ──────────────────────────────────────────────────────────── */
 const ACTIVITIES = [
-  { id: 'spanish',     name: 'Испанский',  gameName: 'Перехват сигнала' },
-  { id: 'handwriting', name: 'Прописи',    gameName: 'Полевые записи'   },
-  { id: 'training',    name: 'Тренировка', gameName: 'Физподготовка'    },
-  { id: 'reading',     name: 'Чтение',     gameName: 'Изучение архива'  },
+  { id: 'spanish',     name: 'Испанский',  gameName: 'Перехват сигнала', accent: '#5fd6c8' },
+  { id: 'handwriting', name: 'Прописи',    gameName: 'Полевые записи',   accent: '#c9c15f' },
+  { id: 'training',    name: 'Тренировка', gameName: 'Физподготовка',    accent: '#d6705f' },
+  { id: 'reading',     name: 'Чтение',     gameName: 'Изучение архива',  accent: '#7a8fd6' },
 ];
 
 /* ── ITEMS ───────────────────────────────────────────────────────────────── */
 const ITEMS = [
   // Хлам
-  { id: 'rusty_bolts',    name: 'Горсть ржавых болтов',       rarity: 'common',    weight: 35, activities: ['training'] },
-  { id: 'radio_fragment', name: 'Обломок радиоблока',          rarity: 'common',    weight: 30, activities: ['spanish', 'reading'] },
-  { id: 'damp_notebook',  name: 'Сырая записная книжка',       rarity: 'common',    weight: 28, activities: ['handwriting', 'reading'] },
+  { id: 'rusty_bolts',    name: 'Горсть ржавых болтов',       rarity: 'common',    weight: 35, activities: ['training'], glyph: '⚙' },
+  { id: 'radio_fragment', name: 'Обломок радиоблока',          rarity: 'common',    weight: 30, activities: ['spanish', 'reading'], glyph: '⌁' },
+  { id: 'damp_notebook',  name: 'Сырая записная книжка',       rarity: 'common',    weight: 28, activities: ['handwriting', 'reading'], glyph: '▤' },
   // Ресурсы
-  { id: 'copper_wire',    name: 'Катушка медного провода',     rarity: 'common',    weight: 26, activities: ['training', 'handwriting'] },
-  { id: 'signal_tape',    name: 'Лента с частотами',           rarity: 'uncommon',  weight: 14, activities: ['spanish'] },
-  { id: 'patch_fabric',   name: 'Клочок маскировочной ткани',  rarity: 'uncommon',  weight: 13, activities: ['training', 'handwriting'] },
-  { id: 'tin_filter',     name: 'Жестяной фильтр',             rarity: 'uncommon',  weight: 11, activities: ['training'] },
+  { id: 'copper_wire',    name: 'Катушка медного провода',     rarity: 'common',    weight: 26, activities: ['training', 'handwriting'], glyph: '∿' },
+  { id: 'signal_tape',    name: 'Лента с частотами',           rarity: 'uncommon',  weight: 14, activities: ['spanish'], glyph: '≈' },
+  { id: 'patch_fabric',   name: 'Клочок маскировочной ткани',  rarity: 'uncommon',  weight: 13, activities: ['training', 'handwriting'], glyph: '▨' },
+  { id: 'tin_filter',     name: 'Жестяной фильтр',             rarity: 'uncommon',  weight: 11, activities: ['training'], glyph: '⧉' },
   // Снаряжение
-  { id: 'drain_map',      name: 'Карта дренажного сектора',    rarity: 'rare',      weight: 6,  activities: ['reading', 'training'] },
-  { id: 'sector_pass',    name: 'Просроченный пропуск',        rarity: 'rare',      weight: 5,  activities: ['spanish', 'reading'] },
-  { id: 'corroded_badge', name: 'Коррозированный жетон',       rarity: 'rare',      weight: 5,  activities: ['reading', 'spanish'] },
-  { id: 'cipher_sheet',   name: 'Шифровальный бланк',          rarity: 'very_rare', weight: 3,  activities: ['spanish', 'handwriting'] },
+  { id: 'drain_map',      name: 'Карта дренажного сектора',    rarity: 'rare',      weight: 6,  activities: ['reading', 'training'], glyph: '⌖' },
+  { id: 'sector_pass',    name: 'Просроченный пропуск',        rarity: 'rare',      weight: 5,  activities: ['spanish', 'reading'], glyph: '▣' },
+  { id: 'corroded_badge', name: 'Коррозированный жетон',       rarity: 'rare',      weight: 5,  activities: ['reading', 'spanish'], glyph: '⬡' },
+  { id: 'cipher_sheet',   name: 'Шифровальный бланк',          rarity: 'very_rare', weight: 3,  activities: ['spanish', 'handwriting'], glyph: '⌬' },
   // Артефакт
-  { id: 'void_fragment',  name: 'Фрагмент пустоты',            rarity: 'legendary', weight: 1,  activities: ['spanish', 'handwriting', 'training', 'reading'] },
+  { id: 'void_fragment',  name: 'Фрагмент пустоты',            rarity: 'legendary', weight: 1,  activities: ['spanish', 'handwriting', 'training', 'reading'], glyph: '◉' },
 ];
 
 /* ── UNLOCKS ─────────────────────────────────────────────────────────────── */
@@ -792,9 +813,9 @@ function renderSortie(el) {
   ACTIVITIES.forEach(a => {
     const tc = todayCount(a.id);
     const tot = sessCount(a.id);
-    left += `<div class="act-card">
+    left += `<div class="act-card" style="border-color:${a.accent}">
       <div class="act-hdr">
-        <div class="act-name">${a.name}</div>
+        <div class="act-name" style="color:${a.accent}">${a.name}</div>
         <div class="act-gname">${a.gameName}</div>
       </div>
       <div class="act-meta">
@@ -847,7 +868,7 @@ function renderInventory(el) {
       if (!instances) return;
       html += `<div class="inv-item" tabindex="0" data-r="${item.rarity}" data-a="inv-detail" data-iid="${item.id}">
         <span class="i-cnt">x${instances.length}</span>
-        <div class="i-icon">${item.name[0]}</div>
+        <div class="i-icon">${item.glyph}</div>
         <div class="i-name">${item.name}</div>
       </div>`;
     });
@@ -954,7 +975,7 @@ function showInvDetail(itemId) {
   mc.innerHTML = `<div class="ov" id="det-ov">
     <div class="mbox">
       <div class="id-hdr">
-        <div class="id-icon" style="background:var(--r-${item.rarity});color:#111">${item.name[0]}</div>
+        <div class="id-icon" style="background:var(--r-${item.rarity});color:#111">${item.glyph}</div>
         <div>
           <div style="font-size:16px;font-weight:bold;color:var(--fg);margin-bottom:3px">${item.name}</div>
           <div class="id-rarity" style="color:var(--r-${item.rarity})">${S.rarities[item.rarity]}</div>
@@ -1010,7 +1031,7 @@ function showLoot(session) {
     const item = byId(d.itemId);
     if (!item) return '';
     return `<div class="loot-card${rm?' vis glow':''}" data-r="${item.rarity}" data-idx="${i}">
-      <div class="lc-icon">${item.name[0]}</div>
+      <div class="lc-icon">${item.glyph}</div>
       <div class="lc-name">${item.name}</div>
       <div class="lc-rarity">${S.rarities[item.rarity]}</div>
     </div>`;
