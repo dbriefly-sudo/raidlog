@@ -175,6 +175,7 @@ body::after {
 }
 .cmp-btn:hover, .cmp-btn:focus-visible { background: rgba(232,160,96,.18); outline: none; }
 .cmp-btn:active { background: rgba(232,160,96,.28); }
+.cmp-btn:disabled { opacity: .4; cursor: default; }
 
 /* UNDO */
 .undo-btn {
@@ -756,6 +757,7 @@ function undoLast() {
 /* ── STATE ───────────────────────────────────────────────────────────────── */
 let tab = 'sortie';
 let prevTab = 'sortie';
+let sortieBusy = false;
 let calY = new Date().getFullYear();
 let calM = new Date().getMonth() + 1;
 
@@ -1073,7 +1075,7 @@ function showLoot(session) {
     if (skipBtn) skipBtn.addEventListener('click', revealAll);
   }
 
-  closeBtn.addEventListener('click', () => { mc.innerHTML = ''; render(); });
+  closeBtn.addEventListener('click', () => { sortieBusy = false; mc.innerHTML = ''; render(); });
 }
 
 /* ── EVENTS ──────────────────────────────────────────────────────────────── */
@@ -1098,11 +1100,18 @@ document.addEventListener('click', async e => {
       break;
 
     case 'complete': {
+      if (sortieBusy) return;
       const actId = t.dataset.act;
       const tc = todayCount(actId);
+      sortieBusy = true;
+      document.querySelectorAll('.cmp-btn').forEach(b => b.disabled = true);
       if (tc > 0) {
         const msg = S.confirmDouble.replace('{n}', tc);
-        if (!await confirm_('Повторная вылазка', msg)) return;
+        if (!await confirm_('Повторная вылазка', msg)) {
+          sortieBusy = false;
+          document.querySelectorAll('.cmp-btn').forEach(b => b.disabled = false);
+          return;
+        }
       }
       const sess = completeSortie(actId);
       renderHeader();
