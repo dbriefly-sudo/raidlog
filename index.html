@@ -544,6 +544,16 @@ const S = {
   msNoData: 'Данные появятся после первой вылазки.',
   exportBtn: 'ЭКСПОРТ СОХРАНЕНИЯ',
   importBtn: 'ИМПОРТ СОХРАНЕНИЯ',
+  exportCsvBtn: 'ЭКСПОРТ ЖУРНАЛА (CSV)',
+  exportHtmlBtn: 'ЭКСПОРТ ЖУРНАЛА (HTML)',
+  logColDate: 'Дата',
+  logColTime: 'Время',
+  logColAct: 'Активность',
+  logColXp: 'XP',
+  logColDrops: 'Находки',
+  logTitle: 'Журнал вылазок — РЕЙД',
+  logExportedAt: 'Экспортировано',
+  logTotalSorties: 'Всего вылазок',
   resetBtn: 'СБРОСИТЬ ВСЁ',
   confirmImport: 'Загрузить сохранение? Текущий прогресс будет заменён.',
   confirmReset: 'Сбросить все данные? Это необратимо.',
@@ -1279,6 +1289,8 @@ function renderSystem(el) {
       <div class="sys-list">${systemsHtml}</div>
       <button class="d-btn" data-a="export">${S.exportBtn}</button>
       <button class="d-btn" data-a="import">${S.importBtn}</button>
+      <button class="d-btn" data-a="export-csv">${S.exportCsvBtn}</button>
+      <button class="d-btn" data-a="export-html">${S.exportHtmlBtn}</button>
       <button class="d-btn dng" data-a="reset">${S.resetBtn}</button>
       <div class="d-info">${S.dataInfo}</div>
     </div>`;
@@ -1448,6 +1460,61 @@ function showLoot(session, newAchievements) {
   closeBtn.addEventListener('click', () => { sortieBusy = false; clearPendingReveal(); mc.innerHTML = ''; render(); });
 }
 
+/* ── LOG EXPORT (CSV / HTML) ─────────────────────────────────────────────── */
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function sessionsLogRows() {
+  const header = [S.logColDate, S.logColTime, S.logColAct, S.logColXp, S.logColDrops];
+  const body = DB.sessions.map(s => [
+    s.localDate || '',
+    fmtTime(s.completedAt),
+    byAct(s.activityId)?.name || s.activityId,
+    s.xpAwarded || 0,
+    (s.drops || []).map(d => byId(d.itemId)?.name || d.itemId).join(', '),
+  ]);
+  return { header, body };
+}
+
+function csvEscape(val) {
+  const str = String(val);
+  return /[";\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
+}
+
+function exportSessionsCsv() {
+  const { header, body } = sessionsLogRows();
+  const csv = [header, ...body].map(row => row.map(csvEscape).join(';')).join('\r\n');
+  downloadBlob(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }), 'raidlog_sessions_' + localDate() + '.csv');
+}
+
+function exportSessionsHtml() {
+  const { header, body } = sessionsLogRows();
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const thead = '<tr>' + header.map(h => '<th>' + esc(h) + '</th>').join('') + '</tr>';
+  const tbody = body.map(row => '<tr>' + row.map(c => '<td>' + esc(c) + '</td>').join('') + '</tr>').join('');
+  const html = `<!DOCTYPE html>
+<html lang="ru"><head><meta charset="UTF-8"><title>${esc(S.logTitle)}</title>
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; background:#f4f4f0; color:#222; padding:24px; }
+  h1 { font-size:20px; margin-bottom:4px; }
+  .meta { color:#666; font-size:13px; margin-bottom:16px; }
+  table { border-collapse: collapse; width:100%; background:#fff; }
+  th, td { border:1px solid #ccc; padding:6px 10px; font-size:14px; text-align:left; }
+  th { background:#222; color:#fff; }
+  tr:nth-child(even) td { background:#f9f9f6; }
+</style></head>
+<body>
+  <h1>${esc(S.logTitle)}</h1>
+  <div class="meta">${esc(S.logExportedAt)}: ${esc(fmtDateTime(new Date().toISOString()))} · ${esc(S.logTotalSorties)}: ${body.length}</div>
+  <table><thead>${thead}</thead><tbody>${tbody}</tbody></table>
+</body></html>`;
+  downloadBlob(new Blob([html], { type: 'text/html;charset=utf-8' }), 'raidlog_sessions_' + localDate() + '.html');
+}
+
 /* ── EVENTS ──────────────────────────────────────────────────────────────── */
 document.getElementById('tabs').addEventListener('click', e => {
   const b = e.target.closest('.t-btn');
@@ -1506,13 +1573,12 @@ document.addEventListener('click', async e => {
     case 'cal-day': showDayDetail(t.dataset.date); break;
 
     case 'export': {
-      const blob = new Blob([JSON.stringify(DB,null,2)], {type:'application/json'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'raidlog_' + localDate() + '.json'; a.click();
-      URL.revokeObjectURL(url);
+      downloadBlob(new Blob([JSON.stringify(DB,null,2)], {type:'application/json'}), 'raidlog_' + localDate() + '.json');
       break;
     }
+
+    case 'export-csv':  exportSessionsCsv();  break;
+    case 'export-html': exportSessionsHtml(); break;
 
     case 'import': {
       if (!await confirm_('Импорт', S.confirmImport)) return;
