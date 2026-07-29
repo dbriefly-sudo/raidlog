@@ -260,6 +260,20 @@ body::before {
 .cal-d.tod  { color: var(--fg); font-weight: bold; border-color: var(--brd); }
 .cal-d.emp  { cursor: default; color: transparent; border-color: transparent; }
 
+/* MONTH SUMMARY */
+.ms-blk {
+  border: 1px solid var(--brd);
+  padding: 10px 12px 12px;
+  margin: 0 16px 16px;
+  background: var(--bg2);
+}
+.ms-title { font-size: 14px; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+.ms-row { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; color: var(--dim); padding: 4px 0; border-bottom: 1px solid var(--brd); }
+.ms-row b { color: var(--fg); font-weight: bold; }
+.ms-sub { font-size: 14px; color: var(--dim); letter-spacing: 1px; text-transform: uppercase; margin: 10px 0 2px; }
+.ms-best { font-size: 14px; color: var(--dim); margin-top: 10px; }
+.ms-best b { color: var(--acc); font-weight: bold; }
+
 /* SCREEN HEADER (non-tab screens, e.g. СИСТЕМА) */
 .scr-hdr {
   display: flex; align-items: center; gap: 10px;
@@ -482,6 +496,13 @@ const S = {
   closeBtn: 'ЗАКРЫТЬ',
   activeDays: 'Активных дней',
   noSessions: 'В этот день сессий не было.',
+  msTitle: 'СВОДКА МЕСЯЦА',
+  msSorties: 'Вылазок',
+  msXp: 'XP за месяц',
+  msByAct: 'По активностям',
+  msBestMonth: 'Лучший месяц',
+  msBestUnit: 'вылазок',
+  msNoData: 'Данные появятся после первой вылазки.',
   exportBtn: 'ЭКСПОРТ СОХРАНЕНИЯ',
   importBtn: 'ИМПОРТ СОХРАНЕНИЯ',
   resetBtn: 'СБРОСИТЬ ВСЁ',
@@ -596,6 +617,41 @@ function activeDays(year, month) {
     if (y === year && m === month) days.add(s.localDate);
   });
   return days;
+}
+
+function monthSessions(year, month) {
+  return DB.sessions.filter(s => {
+    if (!s.localDate) return false;
+    const [y, m] = s.localDate.split('-').map(Number);
+    return y === year && m === month;
+  });
+}
+
+function monthSummary(year, month) {
+  const sess = monthSessions(year, month);
+  const byAct = {};
+  ACTIVITIES.forEach(a => { byAct[a.id] = 0; });
+  sess.forEach(s => { byAct[s.activityId] = (byAct[s.activityId]||0) + 1; });
+  return {
+    activeDays: new Set(sess.map(s => s.localDate)).size,
+    sorties: sess.length,
+    xp: sess.reduce((s, x) => s + (x.xpAwarded||0), 0),
+    byAct,
+  };
+}
+
+function bestMonthEver() {
+  const counts = {};
+  DB.sessions.forEach(s => {
+    if (!s.localDate) return;
+    const key = s.localDate.slice(0, 7);
+    counts[key] = (counts[key]||0) + 1;
+  });
+  let best = null;
+  Object.entries(counts).forEach(([key, count]) => {
+    if (!best || count > best.count) best = { key, count };
+  });
+  return best;
 }
 
 function unlockedIds() {
@@ -817,6 +873,15 @@ function renderCalendar(el) {
     grid += `<div class="cal-d ${cls}" tabindex="0" data-a="cal-day" data-date="${ds}">${d}</div>`;
   }
 
+  const ms = monthSummary(calY, calM);
+  const best = bestMonthEver();
+  const actRows = ACTIVITIES.map(a =>
+    `<div class="ms-row"><span>${a.name}</span><span><b>${ms.byAct[a.id]||0}</b></span></div>`
+  ).join('');
+  const bestLine = best
+    ? `${S.msBestMonth}: <b>${S.months[Number(best.key.split('-')[1])-1]} ${best.key.split('-')[0]}</b> — <b>${best.count}</b> ${S.msBestUnit}`
+    : S.msNoData;
+
   el.innerHTML =
     `<div class="sbar"><span>${S.activeDays}: <b>${ad.size}</b></span></div>
     <div class="cal-nav">
@@ -824,7 +889,16 @@ function renderCalendar(el) {
       <div class="cal-mo">${moLabel}</div>
       <button class="cal-nav-btn" data-a="cal-next">&gt;</button>
     </div>
-    <div class="cal-grid">${grid}</div>`;
+    <div class="cal-grid">${grid}</div>
+    <div class="ms-blk">
+      <div class="ms-title">${S.msTitle}</div>
+      <div class="ms-row"><span>${S.activeDays}</span><span><b>${ms.activeDays}</b></span></div>
+      <div class="ms-row"><span>${S.msSorties}</span><span><b>${ms.sorties}</b></span></div>
+      <div class="ms-row"><span>${S.msXp}</span><span><b>${ms.xp}</b></span></div>
+      <div class="ms-sub">${S.msByAct}</div>
+      ${actRows}
+      <div class="ms-best">${bestLine}</div>
+    </div>`;
 }
 
 /* ── ACHIEVEMENTS ────────────────────────────────────────────────────────── */
