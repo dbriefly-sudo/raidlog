@@ -68,8 +68,18 @@ body::before {
   z-index: 100;
 }
 #hdr h1 { font-size: 18px; letter-spacing: 5px; color: var(--acc); font-weight: normal; }
+#hdr-right { display: flex; align-items: center; gap: 10px; }
 #hdr-xp { font-size: 14px; color: var(--fg); text-align: right; line-height: 1.5; }
 #hdr-xp b { color: var(--acc); }
+#hdr-gear {
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: 1px solid var(--brd);
+  color: var(--dim); font-size: 17px;
+  cursor: pointer;
+}
+#hdr-gear:hover, #hdr-gear:focus-visible { border-color: var(--dim); color: var(--fg); outline: none; }
 
 /* TABS */
 #tabs {
@@ -250,6 +260,19 @@ body::before {
 .cal-d.tod  { color: var(--fg); font-weight: bold; border-color: var(--brd); }
 .cal-d.emp  { cursor: default; color: transparent; border-color: transparent; }
 
+/* SCREEN HEADER (non-tab screens, e.g. СИСТЕМА) */
+.scr-hdr {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; border-bottom: 1px solid var(--brd);
+}
+.scr-back {
+  background: none; border: 1px solid var(--brd);
+  color: var(--dim); font-family: var(--font);
+  font-size: 15px; padding: 3px 10px; cursor: pointer;
+}
+.scr-back:hover, .scr-back:focus-visible { border-color: var(--dim); color: var(--fg); outline: none; }
+.scr-title { font-size: 14px; letter-spacing: 2px; text-transform: uppercase; color: var(--fg); font-weight: bold; }
+
 /* DATA */
 .data-sec { padding: 16px; }
 .d-btn {
@@ -406,19 +429,23 @@ body::before {
 <div id="app">
   <header id="hdr">
     <h1>РЕЙД</h1>
-    <div id="hdr-xp"><span id="hxp-lvl">УРОВЕНЬ 1</span><br><span id="hxp-xp">0 XP</span></div>
+    <div id="hdr-right">
+      <div id="hdr-xp"><span id="hxp-lvl">УРОВЕНЬ 1</span><br><span id="hxp-xp">0 XP</span></div>
+      <button id="hdr-gear" data-a="open-system" aria-label="Система">⚙</button>
+    </div>
   </header>
   <div id="tabs">
     <button class="t-btn on" data-tab="sortie">ВЫЛАЗКА</button>
     <button class="t-btn" data-tab="inventory">ИНВЕНТАРЬ</button>
     <button class="t-btn" data-tab="calendar">КАЛЕНДАРЬ</button>
-    <button class="t-btn" data-tab="data">ДАННЫЕ</button>
+    <button class="t-btn" data-tab="achievements">АЧИВКИ</button>
   </div>
   <div id="content">
     <div id="tab-sortie"></div>
     <div id="tab-inventory" hidden></div>
     <div id="tab-calendar" hidden></div>
-    <div id="tab-data" hidden></div>
+    <div id="tab-achievements" hidden></div>
+    <div id="tab-system" hidden></div>
   </div>
 </div>
 <div id="mc"></div>
@@ -428,7 +455,9 @@ body::before {
 
 /* ── STRINGS ─────────────────────────────────────────────────────────────── */
 const S = {
-  tabs: ['ВЫЛАЗКА','ИНВЕНТАРЬ','КАЛЕНДАРЬ','ДАННЫЕ'],
+  tabs: ['ВЫЛАЗКА','ИНВЕНТАРЬ','КАЛЕНДАРЬ','АЧИВКИ'],
+  systemTitle: 'СИСТЕМА',
+  achComingSoon: 'Список достижений скоро появится.',
   activeDaysMo: 'Активных дней в этом месяце',
   nextReward: 'БЛИЖАЙШАЯ НАГРАДА',
   allUnlocked: 'Все плановые награды получены',
@@ -649,6 +678,7 @@ function undoLast() {
 
 /* ── STATE ───────────────────────────────────────────────────────────────── */
 let tab = 'sortie';
+let prevTab = 'sortie';
 let calY = new Date().getFullYear();
 let calM = new Date().getMonth() + 1;
 
@@ -663,14 +693,15 @@ function renderHeader() {
 
 function renderCurrent() {
   document.querySelectorAll('.t-btn').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
-  ['sortie','inventory','calendar','data'].forEach(t => {
+  ['sortie','inventory','calendar','achievements','system'].forEach(t => {
     document.getElementById('tab-' + t).hidden = (t !== tab);
   });
   const el = document.getElementById('tab-' + tab);
-  if (tab === 'sortie')    renderSortie(el);
-  if (tab === 'inventory') renderInventory(el);
-  if (tab === 'calendar')  renderCalendar(el);
-  if (tab === 'data')      renderData(el);
+  if (tab === 'sortie')       renderSortie(el);
+  if (tab === 'inventory')    renderInventory(el);
+  if (tab === 'calendar')     renderCalendar(el);
+  if (tab === 'achievements') renderAchievements(el);
+  if (tab === 'system')       renderSystem(el);
 }
 
 /* ── SORTIE ──────────────────────────────────────────────────────────────── */
@@ -796,14 +827,24 @@ function renderCalendar(el) {
     <div class="cal-grid">${grid}</div>`;
 }
 
-/* ── DATA ────────────────────────────────────────────────────────────────── */
-function renderData(el) {
-  el.innerHTML = `<div class="data-sec">
-    <button class="d-btn" data-a="export">${S.exportBtn}</button>
-    <button class="d-btn" data-a="import">${S.importBtn}</button>
-    <button class="d-btn dng" data-a="reset">${S.resetBtn}</button>
-    <div class="d-info">${S.dataInfo}</div>
-  </div>`;
+/* ── ACHIEVEMENTS ────────────────────────────────────────────────────────── */
+function renderAchievements(el) {
+  el.innerHTML = `<div class="inv-empty">${S.achComingSoon}</div>`;
+}
+
+/* ── SYSTEM ──────────────────────────────────────────────────────────────── */
+function renderSystem(el) {
+  el.innerHTML = `
+    <div class="scr-hdr">
+      <button class="scr-back" data-a="close-system">&lt;</button>
+      <div class="scr-title">${S.systemTitle}</div>
+    </div>
+    <div class="data-sec">
+      <button class="d-btn" data-a="export">${S.exportBtn}</button>
+      <button class="d-btn" data-a="import">${S.importBtn}</button>
+      <button class="d-btn dng" data-a="reset">${S.resetBtn}</button>
+      <div class="d-info">${S.dataInfo}</div>
+    </div>`;
 }
 
 /* ── MODALS ──────────────────────────────────────────────────────────────── */
@@ -950,6 +991,16 @@ document.addEventListener('click', async e => {
   const t = e.target.closest('[data-a]');
   if (!t) return;
   switch (t.dataset.a) {
+
+    case 'open-system':
+      prevTab = tab; tab = 'system';
+      renderCurrent();
+      break;
+
+    case 'close-system':
+      tab = prevTab;
+      renderCurrent();
+      break;
 
     case 'complete': {
       const actId = t.dataset.act;
