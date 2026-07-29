@@ -180,25 +180,7 @@ body::after {
 .cmp-btn:hover, .cmp-btn:focus-visible { background: rgba(232,160,96,.18); outline: none; }
 .cmp-btn:active { background: rgba(232,160,96,.28); }
 .cmp-btn:disabled { opacity: .4; cursor: default; }
-
-/* UNDO */
-.undo-btn {
-  display: block;
-  width: 100%;
-  padding: 10px 12px;
-  background: none;
-  border: 1px solid var(--brd);
-  color: var(--dim);
-  font-family: var(--font);
-  font-size: 14px;
-  letter-spacing: 1px;
-  cursor: pointer;
-  text-transform: uppercase;
-  text-align: left;
-  margin-top: 4px;
-}
-.undo-btn:hover, .undo-btn:focus-visible { border-color: var(--dim); color: var(--fg); outline: none; }
-.undo-btn:disabled { opacity: .3; cursor: default; }
+.cmp-btn.armed { background: rgba(232,160,96,.32); }
 
 /* INVENTORY */
 .xp-blk { padding: 10px 16px; border-bottom: 1px solid var(--brd); }
@@ -480,7 +462,6 @@ body::after {
 /* DESKTOP */
 @media (min-width: 900px) {
   #app { max-width: 1080px; margin: 0 auto; }
-  .sortie-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
   .inv-grid { grid-template-columns: repeat(5, 1fr); }
 }
 
@@ -536,9 +517,7 @@ const S = {
   todaySess: 'Сегодня',
   totalSessLbl: 'Всего',
   completeBtn: 'ЗАВЕРШИТЬ ВЫЛАЗКУ',
-  undoBtn: 'Отменить последнюю вылазку',
-  confirmDouble: 'Вы уже выполнили {n} сессию(-и) этой активности сегодня. Продолжить?',
-  confirmUndo: 'Отменить последнюю вылазку? Предметы и XP будут удалены.',
+  confirmSortiePrefix: 'ПОДТВЕРДИТЬ',
   lootTitle: 'ДОБЫЧА',
   skipAnim: 'ПРОПУСТИТЬ',
   closeLoot: 'ЗАКРЫТЬ',
@@ -583,10 +562,10 @@ const S = {
 
 /* ── ACTIVITIES ──────────────────────────────────────────────────────────── */
 const ACTIVITIES = [
-  { id: 'spanish',     name: 'Испанский',  gameName: 'Перехват сигнала', accent: '#5fd6c8' },
-  { id: 'handwriting', name: 'Прописи',    gameName: 'Полевые записи',   accent: '#c9c15f' },
-  { id: 'training',    name: 'Тренировка', gameName: 'Физподготовка',    accent: '#d6705f' },
-  { id: 'reading',     name: 'Чтение',     gameName: 'Изучение архива',  accent: '#7a8fd6' },
+  { id: 'spanish',     name: 'Испанский',  gameName: 'Перехват сигнала', location: 'Радиовышка',    accent: '#5fd6c8' },
+  { id: 'handwriting', name: 'Прописи',    gameName: 'Полевые записи',   location: 'Архив',          accent: '#c9c15f' },
+  { id: 'training',    name: 'Тренировка', gameName: 'Физподготовка',    location: 'Промдвор',       accent: '#d6705f' },
+  { id: 'reading',     name: 'Чтение',     gameName: 'Изучение архива',  location: 'Книгохранилище', accent: '#7a8fd6' },
 ];
 
 /* ── ITEMS ───────────────────────────────────────────────────────────────── */
@@ -824,6 +803,29 @@ function load() {
 
 function save() { localStorage.setItem(KEY, JSON.stringify(DB)); }
 
+/* pendingReveal lives outside the DB blob — it's UI-recovery state, not save
+   data, so it shouldn't round-trip through export/import. The session and its
+   loot are already committed to DB (and saved) before this is written, so
+   nothing is lost if the tab closes; this only exists to re-show the reveal
+   the user hadn't dismissed yet, instead of silently skipping it. */
+const PENDING_KEY = 'raidlog_pending_v1';
+
+function savePendingReveal(sessionId, achievementIds) {
+  try { localStorage.setItem(PENDING_KEY, JSON.stringify({ sessionId, achievementIds })); } catch(_) {}
+}
+
+function clearPendingReveal() {
+  try { localStorage.removeItem(PENDING_KEY); } catch(_) {}
+}
+
+function loadPendingReveal() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(PENDING_KEY));
+    if (raw && raw.sessionId) return raw;
+  } catch(_) {}
+  return null;
+}
+
 let DB = load();
 
 /* ── UTILS ───────────────────────────────────────────────────────────────── */
@@ -1039,23 +1041,6 @@ function applyDrops(drops, actId, dateStr) {
   });
 }
 
-function revertDrops(drops) {
-  drops.forEach(d => {
-    const item = byId(d.itemId);
-    if (!item) return;
-    if (item.type === 'material') {
-      const next = (DB.inventory[item.id] || 0) - 1;
-      if (next > 0) DB.inventory[item.id] = next; else delete DB.inventory[item.id];
-    } else {
-      delete DB.discoveries[item.id];
-      if (item.type === 'gear') {
-        const idx = DB.gear.owned.indexOf(item.id);
-        if (idx !== -1) DB.gear.owned.splice(idx, 1);
-      }
-    }
-  });
-}
-
 function completeSortie(actId) {
   const now = new Date();
   const dateStr = localDate(now);
@@ -1076,15 +1061,6 @@ function completeSortie(actId) {
   return sess;
 }
 
-/* undoLast only ever targets the most recent session (LIFO), and non-material
-   items are only ever discovered once — so reverting its drops is unambiguous */
-function undoLast() {
-  if (!DB.sessions.length) return;
-  const sess = DB.sessions.pop();
-  revertDrops(sess.drops || []);
-  save();
-}
-
 function checkNewAchievements() {
   const unlocked = DB.achievements.unlocked;
   const now = new Date().toISOString();
@@ -1101,8 +1077,22 @@ function checkNewAchievements() {
 let tab = 'sortie';
 let prevTab = 'sortie';
 let sortieBusy = false;
+let armedActId = null;   // activity whose button is armed, awaiting the confirming second tap
+let armedTimer = null;
 let calY = new Date().getFullYear();
 let calM = new Date().getMonth() + 1;
+
+function armSortie(actId) {
+  armedActId = actId;
+  if (armedTimer) clearTimeout(armedTimer);
+  armedTimer = setTimeout(() => { armedActId = null; armedTimer = null; renderCurrent(); }, 4000);
+  renderCurrent();
+}
+
+function disarmSortie() {
+  if (armedTimer) { clearTimeout(armedTimer); armedTimer = null; }
+  armedActId = null;
+}
 
 /* ── RENDER ──────────────────────────────────────────────────────────────── */
 function render() { renderHeader(); renderCurrent(); }
@@ -1132,15 +1122,14 @@ function renderCurrent() {
 function renderSortie(el) {
   const now = new Date();
   const adm = activeDays(now.getFullYear(), now.getMonth()+1).size;
-  const last = DB.sessions.length ? DB.sessions[DB.sessions.length-1] : null;
 
-  let left = '', right = '';
-
-  // Activities (left on desktop)
+  let html = '';
   ACTIVITIES.forEach(a => {
     const tc = todayCount(a.id);
     const tot = sessCount(a.id);
-    left += `<div class="act-card" style="border-color:${a.accent}">
+    const armed = armedActId === a.id;
+    const label = armed ? S.confirmSortiePrefix + ': ' + a.location.toUpperCase() : S.completeBtn;
+    html += `<div class="act-card" style="border-color:${a.accent}">
       <div class="act-hdr">
         <div class="act-name" style="color:${a.accent}">${a.name}</div>
         <div class="act-gname">${a.gameName}</div>
@@ -1149,17 +1138,13 @@ function renderSortie(el) {
         <span>${S.todaySess}: <b>${tc}</b></span>
         <span>${S.totalSessLbl}: <b>${tot}</b></span>
       </div>
-      <button class="cmp-btn" data-a="complete" data-act="${a.id}">${S.completeBtn}</button>
+      <button class="cmp-btn${armed?' armed':''}" data-a="complete" data-act="${a.id}">${label}</button>
     </div>`;
   });
 
-  // Undo (right on desktop)
-  const undoInfo = last ? ` (${byAct(last.activityId)?.name||''}, ${last.localDate})` : '';
-  right += `<button class="undo-btn" data-a="undo" ${!last?'disabled':''}>${S.undoBtn}${undoInfo}</button>`;
-
   el.innerHTML =
     `<div class="sbar"><span>${S.activeDaysMo}: <b>${adm}</b></span></div>` +
-    `<div class="sec"><div class="sortie-inner"><div>${left}</div><div>${right}</div></div></div>`;
+    `<div class="sec">${html}</div>`;
 }
 
 /* ── INVENTORY ───────────────────────────────────────────────────────────── */
@@ -1460,7 +1445,7 @@ function showLoot(session, newAchievements) {
     finishReveal();
   }
 
-  closeBtn.addEventListener('click', () => { sortieBusy = false; mc.innerHTML = ''; render(); });
+  closeBtn.addEventListener('click', () => { sortieBusy = false; clearPendingReveal(); mc.innerHTML = ''; render(); });
 }
 
 /* ── EVENTS ──────────────────────────────────────────────────────────────── */
@@ -1487,28 +1472,22 @@ document.addEventListener('click', async e => {
     case 'complete': {
       if (sortieBusy) return;
       const actId = t.dataset.act;
-      const tc = todayCount(actId);
+
+      if (armedActId !== actId) {
+        armSortie(actId);
+        return;
+      }
+
+      // second tap within the 4s window — commit. No cancel past this point.
+      disarmSortie();
       sortieBusy = true;
       document.querySelectorAll('.cmp-btn').forEach(b => b.disabled = true);
-      if (tc > 0) {
-        const msg = S.confirmDouble.replace('{n}', tc);
-        if (!await confirm_('Повторная вылазка', msg)) {
-          sortieBusy = false;
-          document.querySelectorAll('.cmp-btn').forEach(b => b.disabled = false);
-          return;
-        }
-      }
+
       const sess = completeSortie(actId);
       const newAch = checkNewAchievements();
+      savePendingReveal(sess.id, newAch.map(a => a.id));
       renderHeader();
       showLoot(sess, newAch);
-      break;
-    }
-
-    case 'undo': {
-      if (!await confirm_('Отмена', S.confirmUndo)) return;
-      undoLast();
-      render();
       break;
     }
 
@@ -1596,6 +1575,19 @@ document.addEventListener('keydown', e => {
 
 /* ── INIT ────────────────────────────────────────────────────────────────── */
 render();
+
+/* re-show a reveal the user hadn't dismissed before the page reloaded — the
+   session/loot are already safely in DB, this just recovers the UI moment */
+(function resumePendingReveal() {
+  const pending = loadPendingReveal();
+  if (!pending) return;
+  const sess = DB.sessions.find(s => s.id === pending.sessionId);
+  if (!sess) { clearPendingReveal(); return; }
+  sortieBusy = true;
+  document.querySelectorAll('.cmp-btn').forEach(b => b.disabled = true);
+  const achs = ACHIEVEMENTS.filter(a => (pending.achievementIds || []).includes(a.id));
+  showLoot(sess, achs);
+})();
 </script>
 </body>
 </html>
