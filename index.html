@@ -231,6 +231,21 @@ body::after {
 .i-cnt { position: absolute; top: 5px; right: 7px; font-size: 14px; color: var(--fg); font-weight: bold; }
 .i-name { font-size: 14px; color: var(--dim); line-height: 1.3; }
 .inv-empty { padding: 32px 16px; text-align: center; color: var(--dim); font-size: 14px; }
+.inv-item.needed { border-color: var(--acc); }
+.i-need { position: absolute; bottom: 5px; left: 6px; font-size: 10px; letter-spacing: .5px; color: var(--acc); text-transform: uppercase; }
+
+/* nav button linking out to a full screen (e.g. contracts) from within a tab */
+.scr-nav-btn {
+  display: flex; align-items: center; justify-content: space-between;
+  width: calc(100% - 32px); margin: 12px 16px 0;
+  padding: 10px 12px;
+  background: var(--bg2); border: 1px solid var(--brd);
+  color: var(--fg); font-family: var(--font);
+  font-size: 14px; letter-spacing: 1.5px; text-transform: uppercase;
+  cursor: pointer; text-align: left;
+}
+.scr-nav-btn:hover, .scr-nav-btn:focus-visible { border-color: var(--dim); outline: none; }
+.scr-nav-badge { font-size: 12px; letter-spacing: 1px; color: var(--acc); text-transform: none; }
 
 /* CALENDAR */
 .cal-nav {
@@ -286,6 +301,24 @@ body::after {
 }
 .scr-back:hover, .scr-back:focus-visible { border-color: var(--dim); color: var(--fg); outline: none; }
 .scr-title { font-size: 14px; letter-spacing: 2px; text-transform: uppercase; color: var(--fg); font-weight: bold; }
+
+/* LOCKED SYSTEM (full-screen variant, e.g. contracts below level 2) */
+.lock-card { border: 1px solid var(--brd); background: var(--bg2); padding: 32px 16px; text-align: center; }
+.lock-glyph { font-size: 32px; color: var(--dim); margin-bottom: 10px; }
+.lock-text { font-size: 14px; letter-spacing: 1px; text-transform: uppercase; color: var(--dim); }
+
+/* CONTRACTS */
+.contract-card { border: 1px solid var(--brd); background: var(--bg2); margin-bottom: 11px; padding: 10px 12px; }
+.contract-title { font-size: 16px; font-weight: bold; margin-bottom: 2px; }
+.contract-combo-tag { font-size: 11px; letter-spacing: 1px; border: 1px solid var(--acc); color: var(--acc); padding: 1px 4px; }
+.contract-loc { font-size: 14px; color: var(--dim); letter-spacing: 1px; margin-bottom: 8px; }
+.contract-reqs { margin-bottom: 10px; }
+.req-row { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--dim); padding: 3px 0; }
+.req-row b { margin-left: auto; color: var(--dim); font-weight: bold; }
+.req-row.req-met { color: var(--fg); }
+.req-row.req-met b { color: var(--acc); }
+.req-mark { width: 14px; text-align: center; }
+.contract-submit { margin-bottom: 0; }
 
 /* SYSTEMS (level-gated feature status) */
 .sys-list { margin-bottom: 18px; }
@@ -431,6 +464,21 @@ body::after {
   transition: opacity .3s, transform .3s;
 }
 
+/* contract reward presentation */
+@keyframes contract-flash {
+  0%   { opacity: .85; }
+  100% { opacity: 0; }
+}
+.contract-flash {
+  position: fixed; inset: 0;
+  background: var(--acc);
+  pointer-events: none;
+  z-index: 650;
+  animation: contract-flash .4s ease-out forwards;
+}
+.contract-reward-name { font-size: 16px; color: var(--fg); font-weight: bold; text-align: center; }
+.contract-xp-gain { font-size: 18px; color: var(--acc); font-weight: bold; letter-spacing: 1px; }
+
 .loot-acts { display: flex; gap: 8px; }
 .l-btn {
   padding: 10px 20px;
@@ -499,6 +547,7 @@ body::after {
     <div id="tab-calendar" hidden></div>
     <div id="tab-achievements" hidden></div>
     <div id="tab-system" hidden></div>
+    <div id="tab-contracts" hidden></div>
   </div>
 </div>
 <div id="mc"></div>
@@ -528,6 +577,14 @@ const S = {
   invGear: 'СНАРЯЖЕНИЕ',
   invCollectibles: 'КОЛЛЕКЦИЯ',
   invArtifacts: 'АРТЕФАКТЫ',
+  neededForContract: 'КОНТРАКТ',
+  contractsTitle: 'КОНТРАКТЫ',
+  contractsNavLabel: 'КОНТРАКТЫ',
+  contractsReadyUnit: 'готово к сдаче',
+  contractsEmpty: 'Пока нет активных контрактов. Загляните после следующей вылазки.',
+  contractSubmitBtn: 'СДАТЬ',
+  contractDoneTitle: 'КОНТРАКТ ВЫПОЛНЕН',
+  contractComboTag: 'КОМБО',
   detailCnt: 'Количество',
   detailDate: 'Дата находки',
   detailAct: 'Активность',
@@ -627,6 +684,10 @@ const ITEMS = [
   { id: 'aidulin',       name: 'Айдулин',           rarity: 'common',   type: 'material', activities: ['spanish', 'handwriting', 'training', 'reading'], glyph: '✚' },
   { id: 'field_bandage', name: 'Полевой бинт',      rarity: 'common',   type: 'material', activities: ['spanish', 'handwriting', 'training', 'reading'], glyph: '≡' },
   { id: 'army_medkit',   name: 'Армейская аптечка', rarity: 'uncommon', type: 'material', activities: ['spanish', 'handwriting', 'training', 'reading'], glyph: '✛' },
+
+  /* ── Контрактные материалы/награды ────────────────────────────────────── */
+  { id: 'traction_battery', name: 'Тяговый аккумулятор', rarity: 'uncommon', type: 'material', activities: ['spanish', 'training'], glyph: '⏚' },
+  { id: 'combo_backpack', name: 'Экспедиционный рюкзак', rarity: 'rare', type: 'gear', slot: 'backpack', activities: [], glyph: '▥' },
 ];
 
 /* ── ACHIEVEMENTS ────────────────────────────────────────────────────────── */
@@ -721,6 +782,40 @@ function isSystemUnlocked(id, lvl) {
   const u = LEVEL_UNLOCKS.find(x => x.id === id);
   return !u || lvl >= u.level;
 }
+
+/* ── CONTRACTS ───────────────────────────────────────────────────────────── */
+/* Pure data — no functions here, the engine that checks/deducts/rewards lives
+   below. requires: [{itemId, qty}] — never an item of type 'artifact' (the
+   engine assumes materials; requirementStatus reads DB.inventory directly).
+   location: one of ACTIVITIES[].location for a regular per-location contract,
+   null for a location-less "background" contract (pulls from all locations).
+   combo: true + locations: [a,b] for cross-location contracts (level-gated,
+   unlocked by having closed regular contracts in 2+ distinct locations). */
+const CONTRACT_TEMPLATES = [
+  { id: 'promdvor_conveyor', title: 'РЕМОНТ КОНВЕЙЕРА', location: 'Промдвор',
+    requires: [{ itemId: 'rusty_bolts', qty: 3 }, { itemId: 'copper_wire', qty: 2 }],
+    reward: { items: [{ itemId: 'tin_filter', qty: 1 }] } },
+
+  { id: 'radiovyshka_tuning', title: 'НАСТРОЙКА ЧАСТОТ', location: 'Радиовышка',
+    requires: [{ itemId: 'radio_fragment', qty: 3 }, { itemId: 'signal_tape', qty: 2 }],
+    reward: { items: [{ itemId: 'sector_pass', qty: 1 }] } },
+
+  { id: 'arkhiv_inventory', title: 'ОПИСЬ ФОНДОВ', location: 'Архив',
+    requires: [{ itemId: 'damp_notebook', qty: 3 }, { itemId: 'ink_cartridge', qty: 2 }],
+    reward: { items: [{ itemId: 'patch_fabric', qty: 1 }] } },
+
+  { id: 'knigokhran_catalog', title: 'КАТАЛОГИЗАЦИЯ', location: 'Книгохранилище',
+    requires: [{ itemId: 'damp_notebook', qty: 3 }, { itemId: 'microfiche', qty: 2 }],
+    reward: { items: [{ itemId: 'cipher_sheet', qty: 1 }] } },
+
+  { id: 'med_station', title: 'МЕДПУНКТ СТАНЦИИ', location: null,
+    requires: [{ itemId: 'aidulin', qty: 2 }, { itemId: 'field_bandage', qty: 2 }, { itemId: 'army_medkit', qty: 1 }],
+    reward: { items: [{ itemId: 'corroded_badge', qty: 1 }] } },
+
+  { id: 'combo_radiovyshka_promdvor', title: 'ПЕРЕКРЁСТНАЯ ПОСТАВКА', combo: true, locations: ['Радиовышка', 'Промдвор'],
+    requires: [{ itemId: 'traction_battery', qty: 3 }],
+    reward: { items: [{ itemId: 'combo_backpack', qty: 1 }], displaySlot: true } },
+];
 
 /* ── STORAGE ─────────────────────────────────────────────────────────────── */
 const KEY = 'raidlog_v1';
@@ -1051,6 +1146,98 @@ function applyDrops(drops, actId, dateStr) {
   });
 }
 
+/* ── CONTRACTS ENGINE ────────────────────────────────────────────────────── */
+function contractTemplate(id) { return CONTRACT_TEMPLATES.find(t => t.id === id); }
+
+function requirementStatus(templateId) {
+  const tpl = contractTemplate(templateId);
+  if (!tpl) return [];
+  return tpl.requires.map(r => {
+    const have = DB.inventory[r.itemId] || 0;
+    return { itemId: r.itemId, qty: r.qty, have, met: have >= r.qty };
+  });
+}
+
+function canFulfillContract(templateId) {
+  return requirementStatus(templateId).every(r => r.met);
+}
+
+function neededForContracts() {
+  const s = new Set();
+  DB.contracts.active.forEach(c => {
+    const tpl = contractTemplate(c.templateId);
+    if (tpl) tpl.requires.forEach(r => s.add(r.itemId));
+  });
+  return s;
+}
+
+function comboTemplatesEligible() {
+  if (!isSystemUnlocked('combo_contracts', level())) return [];
+  const closedLocations = new Set(
+    DB.contracts.completed.filter(c => !c.combo && c.location).map(c => c.location)
+  );
+  if (closedLocations.size < 2) return [];
+  return CONTRACT_TEMPLATES.filter(t => t.combo
+    && !DB.contracts.active.some(a => a.templateId === t.id)
+    && !DB.contracts.completed.some(c => c.templateId === t.id));
+}
+
+/* only ever called from completeSortie(), gated to the first real sortie of a
+   new day — never on app open. Seeds the board (4 location contracts + the
+   med contract) the first time it ever runs, then tops up one contract per
+   location (capped at 10 active total) on every subsequent day. */
+function generateContracts(dateStr) {
+  const isFirstEver = DB.contracts.lastGeneratedLocalDate === null;
+
+  ACTIVITIES.forEach(a => {
+    if (DB.contracts.active.length >= 10) return;
+    const tpl = CONTRACT_TEMPLATES.find(t => !t.combo && t.location === a.location);
+    if (tpl) DB.contracts.active.push({ id: uid(), templateId: tpl.id });
+  });
+
+  if (isFirstEver && DB.contracts.active.length < 10) {
+    const med = contractTemplate('med_station');
+    if (med) DB.contracts.active.push({ id: uid(), templateId: med.id });
+  }
+
+  comboTemplatesEligible().forEach(tpl => {
+    if (DB.contracts.active.length < 10) DB.contracts.active.push({ id: uid(), templateId: tpl.id });
+  });
+
+  DB.contracts.lastGeneratedLocalDate = dateStr;
+}
+
+/* Atomic: check -> deduct -> grant (reward + XP via the completed record,
+   read by the existing totalXP() formula — nothing to add explicitly) ->
+   save. No partial contributions: the check re-runs here regardless of what
+   the UI last showed, so a stale render can never cause an over-deduction. */
+function submitContract(activeId) {
+  const inst = DB.contracts.active.find(c => c.id === activeId);
+  if (!inst) return null;
+  const tpl = contractTemplate(inst.templateId);
+  if (!tpl || !canFulfillContract(inst.templateId)) return null;
+
+  tpl.requires.forEach(r => {
+    const next = (DB.inventory[r.itemId] || 0) - r.qty;
+    if (next > 0) DB.inventory[r.itemId] = next; else delete DB.inventory[r.itemId];
+  });
+
+  const sourceActId = tpl.location ? (ACTIVITIES.find(a => a.location === tpl.location)?.id || 'contract') : 'contract';
+  const rewardDrops = [];
+  (tpl.reward.items || []).forEach(ri => { for (let k = 0; k < ri.qty; k++) rewardDrops.push({ itemId: ri.itemId }); });
+  applyDrops(rewardDrops, sourceActId, localDate());
+  if (tpl.reward.displaySlot) DB.displaySlots.push(null);
+
+  DB.contracts.completed.push({
+    id: uid(), templateId: tpl.id, combo: !!tpl.combo,
+    location: tpl.location || null, completedAt: new Date().toISOString(),
+  });
+  DB.contracts.active = DB.contracts.active.filter(c => c.id !== activeId);
+
+  save();
+  return { tpl, grantedItems: rewardDrops.map(d => d.itemId) };
+}
+
 function completeSortie(actId) {
   const now = new Date();
   const dateStr = localDate(now);
@@ -1067,6 +1254,9 @@ function completeSortie(actId) {
     drops,
   };
   DB.sessions.push(sess);
+
+  if (DB.contracts.lastGeneratedLocalDate !== dateStr) generateContracts(dateStr);
+
   save();
   return sess;
 }
@@ -1085,12 +1275,24 @@ function checkNewAchievements() {
 
 /* ── STATE ───────────────────────────────────────────────────────────────── */
 let tab = 'sortie';
-let prevTab = 'sortie';
+let tabStack = [];   // screens (system/contracts) can open from one another, so a
+                      // single prevTab isn't enough once navigation nests two deep
 let sortieBusy = false;
 let armedActId = null;   // activity whose button is armed, awaiting the confirming second tap
 let armedTimer = null;
 let calY = new Date().getFullYear();
 let calM = new Date().getMonth() + 1;
+
+function openScreen(name) {
+  tabStack.push(tab);
+  tab = name;
+  renderCurrent();
+}
+
+function closeScreen() {
+  tab = tabStack.pop() || 'sortie';
+  renderCurrent();
+}
 
 function armSortie(actId) {
   armedActId = actId;
@@ -1107,17 +1309,29 @@ function disarmSortie() {
 /* ── RENDER ──────────────────────────────────────────────────────────────── */
 function render() { renderHeader(); renderCurrent(); }
 
-function renderHeader() {
-  const li = levelInfo(totalXP());
+function renderHeader(xpOverride) {
+  const li = levelInfo(xpOverride !== undefined ? xpOverride : totalXP());
   const pct = li.xpForLevel ? Math.round(li.xpIntoLevel / li.xpForLevel * 100) : 100;
   document.getElementById('hxp-rank').textContent = rankForLevel(li.level) + ' · ' + S.level + ' ' + li.level;
   document.getElementById('hxp-fill').style.width = pct + '%';
   document.getElementById('hxp-xp').textContent = li.xpIntoLevel + ' / ' + li.xpForLevel + ' XP';
 }
 
+function animateXpCountUp(fromXp, toXp, duration) {
+  const rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (rm || toXp <= fromXp) { renderHeader(); return; }
+  const start = performance.now();
+  function step(now) {
+    const t = Math.min((now - start) / duration, 1);
+    renderHeader(Math.round(fromXp + (toXp - fromXp) * t));
+    if (t < 1) requestAnimationFrame(step); else renderHeader();
+  }
+  requestAnimationFrame(step);
+}
+
 function renderCurrent() {
   document.querySelectorAll('.t-btn').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
-  ['sortie','inventory','calendar','achievements','system'].forEach(t => {
+  ['sortie','inventory','calendar','achievements','system','contracts'].forEach(t => {
     document.getElementById('tab-' + t).hidden = (t !== tab);
   });
   const el = document.getElementById('tab-' + tab);
@@ -1126,6 +1340,7 @@ function renderCurrent() {
   if (tab === 'calendar')     renderCalendar(el);
   if (tab === 'achievements') renderAchievements(el);
   if (tab === 'system')       renderSystem(el);
+  if (tab === 'contracts')    renderContracts(el);
 }
 
 /* ── SORTIE ──────────────────────────────────────────────────────────────── */
@@ -1158,13 +1373,17 @@ function renderSortie(el) {
 }
 
 /* ── INVENTORY ───────────────────────────────────────────────────────────── */
-function invSection(title, items, cntFn) {
+function invSection(title, items, cntFn, neededSet) {
   if (!items.length) return '';
-  const cards = items.map(item => `<div class="inv-item" tabindex="0" data-r="${item.rarity}" data-a="inv-detail" data-iid="${item.id}">
+  const cards = items.map(item => {
+    const needed = neededSet && neededSet.has(item.id);
+    return `<div class="inv-item${needed ? ' needed' : ''}" tabindex="0" data-r="${item.rarity}" data-a="inv-detail" data-iid="${item.id}">
       <span class="i-cnt">${cntFn(item)}</span>
+      ${needed ? `<span class="i-need">${S.neededForContract}</span>` : ''}
       <div class="i-icon">${item.glyph}</div>
       <div class="i-name">${item.name}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   return `<div class="inv-sub">${title}</div><div class="inv-grid">${cards}</div>`;
 }
 
@@ -1179,6 +1398,12 @@ function renderInventory(el) {
     <div class="xp-sub">${li.xpIntoLevel} / ${li.xpForLevel} XP | ${li.xpToNext} ${S.xpToNext}</div>
   </div>`;
 
+  const readyCount = DB.contracts.active.filter(c => canFulfillContract(c.templateId)).length;
+  html += `<button class="scr-nav-btn" data-a="open-contracts">
+    <span>${S.contractsNavLabel}</span>
+    ${readyCount ? `<span class="scr-nav-badge">${readyCount} ${S.contractsReadyUnit}</span>` : ''}
+  </button>`;
+
   const materials    = ITEMS.filter(i => i.type === 'material'   && DB.inventory[i.id] > 0);
   const gear         = ITEMS.filter(i => i.type === 'gear'       && DB.discoveries[i.id]);
   const collectibles = ITEMS.filter(i => i.type === 'collectible' && DB.discoveries[i.id]);
@@ -1187,7 +1412,7 @@ function renderInventory(el) {
   if (!materials.length && !gear.length && !collectibles.length && !artifacts.length) {
     html += `<div class="inv-empty">${S.invEmpty}</div>`;
   } else {
-    html += invSection(S.invMaterials,    materials,    item => 'x' + DB.inventory[item.id]);
+    html += invSection(S.invMaterials,    materials,    item => 'x' + DB.inventory[item.id], neededForContracts());
     html += invSection(S.invGear,         gear,         () => '');
     html += invSection(S.invCollectibles, collectibles, () => '');
     html += invSection(S.invArtifacts,    artifacts,    () => '');
@@ -1294,6 +1519,57 @@ function renderSystem(el) {
       <button class="d-btn dng" data-a="reset">${S.resetBtn}</button>
       <div class="d-info">${S.dataInfo}</div>
     </div>`;
+}
+
+/* ── CONTRACTS SCREEN ────────────────────────────────────────────────────── */
+function renderContracts(el) {
+  const lvl = level();
+  const header = `<div class="scr-hdr">
+      <button class="scr-back" data-a="close-contracts">&lt;</button>
+      <div class="scr-title">${S.contractsTitle}</div>
+    </div>`;
+
+  if (!isSystemUnlocked('contracts', lvl)) {
+    const u = LEVEL_UNLOCKS.find(x => x.id === 'contracts');
+    el.innerHTML = header + `<div class="sec">
+      <div class="lock-card">
+        <div class="lock-glyph">⚿</div>
+        <div class="lock-text">${S.level} ${u.level}: ${u.label}</div>
+      </div>
+    </div>`;
+    return;
+  }
+
+  if (!DB.contracts.active.length) {
+    el.innerHTML = header + `<div class="inv-empty">${S.contractsEmpty}</div>`;
+    return;
+  }
+
+  const cardsHtml = DB.contracts.active.map(inst => {
+    const tpl = contractTemplate(inst.templateId);
+    if (!tpl) return '';
+    const status = requirementStatus(inst.templateId);
+    const ready = status.every(r => r.met);
+    const locLabel = tpl.combo ? tpl.locations.join(' × ') : (tpl.location || S.contractsTitle);
+    const accent = tpl.combo ? 'var(--acc)' : (ACTIVITIES.find(a => a.location === tpl.location)?.accent || 'var(--brd)');
+    const comboTag = tpl.combo ? `<span class="contract-combo-tag">${S.contractComboTag}</span> ` : '';
+    const reqRows = status.map(r => {
+      const item = byId(r.itemId);
+      return `<div class="req-row${r.met ? ' req-met' : ''}">
+        <span class="req-mark">${r.met ? '✓' : '·'}</span>
+        <span class="req-name">${item ? item.name : r.itemId}</span>
+        <b>${r.have} / ${r.qty}</b>
+      </div>`;
+    }).join('');
+    return `<div class="contract-card" style="border-color:${accent}">
+      <div class="contract-title" style="color:${accent}">${comboTag}${tpl.title}</div>
+      <div class="contract-loc">${locLabel}</div>
+      <div class="contract-reqs">${reqRows}</div>
+      <button class="d-btn contract-submit" data-a="contract-submit" data-cid="${inst.id}" ${ready ? '' : 'disabled'}>${S.contractSubmitBtn}</button>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = header + `<div class="sec">${cardsHtml}</div>`;
 }
 
 /* ── MODALS ──────────────────────────────────────────────────────────────── */
@@ -1460,6 +1736,42 @@ function showLoot(session, newAchievements) {
   closeBtn.addEventListener('click', () => { sortieBusy = false; clearPendingReveal(); mc.innerHTML = ''; render(); });
 }
 
+/* presentation for a completed contract — distinct from the random loot
+   reveal: a flash, the reward card(s), and an XP count-up rather than a
+   staggered card-by-card reveal (there's nothing to build suspense about,
+   the reward was guaranteed the moment requirements were met) */
+function showContractReward(tpl, grantedItemIds, beforeXp, afterXp) {
+  const rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const cardsHtml = grantedItemIds.map(id => {
+    const item = byId(id);
+    if (!item) return '';
+    return `<div class="loot-card vis glow" data-r="${item.rarity}">
+      <div class="lc-icon">${item.glyph}</div>
+      <div class="lc-name">${item.name}</div>
+      <div class="lc-rarity">${S.rarities[item.rarity]}</div>
+    </div>`;
+  }).join('');
+
+  mc.innerHTML = `<div class="loot-ov">
+    ${!rm ? '<div class="contract-flash"></div>' : ''}
+    <div class="loot-title">${S.contractDoneTitle}</div>
+    <div class="contract-reward-name">${tpl.title}</div>
+    <div class="loot-cards">${cardsHtml}</div>
+    <div class="contract-xp-gain">+${afterXp - beforeXp} XP</div>
+    <div class="loot-acts">
+      <button class="l-btn pri" id="close-loot">${S.closeLoot}</button>
+    </div>
+  </div>`;
+
+  animateXpCountUp(beforeXp, afterXp, rm ? 0 : 700);
+
+  mc.querySelector('#close-loot').addEventListener('click', () => {
+    mc.innerHTML = '';
+    render(); // returns to the (freshly updated) contracts screen, ready for the next one
+  });
+}
+
 /* ── LOG EXPORT (CSV / HTML) ─────────────────────────────────────────────── */
 function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
@@ -1526,15 +1838,10 @@ document.addEventListener('click', async e => {
   if (!t) return;
   switch (t.dataset.a) {
 
-    case 'open-system':
-      prevTab = tab; tab = 'system';
-      renderCurrent();
-      break;
-
-    case 'close-system':
-      tab = prevTab;
-      renderCurrent();
-      break;
+    case 'open-system':    openScreen('system');    break;
+    case 'close-system':   closeScreen();            break;
+    case 'open-contracts': openScreen('contracts');  break;
+    case 'close-contracts': closeScreen();           break;
 
     case 'complete': {
       if (sortieBusy) return;
@@ -1559,6 +1866,15 @@ document.addEventListener('click', async e => {
     }
 
     case 'inv-detail': showInvDetail(t.dataset.iid); break;
+
+    case 'contract-submit': {
+      const beforeXp = totalXP();
+      const result = submitContract(t.dataset.cid);
+      if (!result) { renderCurrent(); break; } // stale button state (shouldn't happen) -- just refresh
+      checkNewAchievements();
+      showContractReward(result.tpl, result.grantedItems, beforeXp, totalXP());
+      break;
+    }
 
     case 'cal-prev':
       if (--calM < 1) { calM = 12; calY--; }
