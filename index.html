@@ -862,11 +862,16 @@ function rankForLevel(lvl) {
   return RANKS[Math.min(Math.floor((lvl - 1) / 5), RANKS.length - 1)];
 }
 
+/* Only ever list a system here if it corresponds to something real in the
+   UI — the СИСТЕМА screen's status list otherwise advertises a feature that
+   doesn't exist. display2 (showcase 2nd slot) and deep_sectors were removed:
+   displayCapacity()/equipmentClass() compute correctly for a future screen,
+   but no screen exists yet to gate, so there's nothing for a level number to
+   honestly announce. contracts and combo_contracts stay — both gate a real
+   screen/behavior (renderContracts()'s lock, comboTemplatesEligible()). */
 const LEVEL_UNLOCKS = [
   { id: 'contracts',       level: 2, label: 'ДОСТУП К КОНТРАКТАМ' },
-  { id: 'display2',        level: 3, label: 'ВТОРОЙ СЛОТ ВИТРИНЫ' },
   { id: 'combo_contracts', level: 4, label: 'КОМБО-КОНТРАКТЫ' },
-  { id: 'deep_sectors',    level: 5, label: 'ГЛУБОКИЕ СЕКТОРЫ' },
 ];
 
 function isSystemUnlocked(id, lvl) {
