@@ -696,13 +696,13 @@ const ITEMS = [
   { id: 'patch_fabric',   name: 'Клочок маскировочной ткани', rarity: 'uncommon',  type: 'material', activities: ['training', 'handwriting'], glyph: '▨', dropChannel: 'material', unique: false, stackable: true, consumable: true },
   { id: 'tin_filter',     name: 'Жестяной фильтр',            rarity: 'uncommon',  type: 'material', activities: ['training'], glyph: '⧉', dropChannel: 'material', unique: false, stackable: true, consumable: true },
   { id: 'drain_map',      name: 'Карта дренажного сектора',   rarity: 'uncommon',  type: 'material', activities: ['reading', 'training'], glyph: '⌖', dropChannel: 'material', unique: false, stackable: true, consumable: true },
-  { id: 'stamped_bearing', name: 'Клеймёный подшипник',       rarity: 'rare', type: 'collectible', activities: ['training'], glyph: '◍', dropChancePerSortie: 12, role: 'contract_part', dropChannel: 'special', unique: true, stackable: false, consumable: false },
-  { id: 'gear_body',     name: 'Бронежилет промзоны', rarity: 'rare',     type: 'gear', slot: 'body',      activities: ['training'], glyph: '⛨', dropChancePerSortie: 7, dropChancePerSortieDeep: 11, role: 'gear', dropChannel: 'special', unique: true, stackable: false, consumable: false },
-  { id: 'gear_legs',     name: 'Армированные штаны',  rarity: 'rare',     type: 'gear', slot: 'legs',      activities: ['training'], glyph: '◫', dropChancePerSortie: 7, dropChancePerSortieDeep: 11, role: 'gear', dropChannel: 'special', unique: true, stackable: false, consumable: false },
-  { id: 'gear_hands',    name: 'Рабочие перчатки',    rarity: 'rare',     type: 'gear', slot: 'hands',     activities: ['training'], glyph: '◠', dropChancePerSortie: 7, dropChancePerSortieDeep: 11, role: 'gear', dropChannel: 'special', unique: true, stackable: false, consumable: false },
-  { id: 'gear_backpack', name: 'Тактический рюкзак',  rarity: 'rare',     type: 'gear', slot: 'backpack',  activities: ['training'], glyph: '⌂', dropChancePerSortie: 7, dropChancePerSortieDeep: 11, role: 'gear', dropChannel: 'special', unique: true, stackable: false, consumable: false },
-  { id: 'pm9',           name: '«ПМ-9»',              rarity: 'uncommon', type: 'gear', slot: 'weapon',   activities: ['training'], glyph: '◎', dropChancePerSortie: 7, dropChancePerSortieDeep: 11, role: 'gear', dropChannel: 'special', unique: true, stackable: false, consumable: false },
-  { id: 'turbogen_fragment', name: 'Осколок довоенного турбогенератора', rarity: 'legendary', type: 'collectible', activities: ['training'], glyph: '✷', dropChancePerSortie: 2, dropChancePerSortieDeep: 4, role: 'legendary', dropChannel: 'special', unique: true, stackable: false, consumable: false },
+  { id: 'stamped_bearing', name: 'Клеймёный подшипник',       rarity: 'rare', type: 'material', activities: ['training'], glyph: '◍', role: 'contract_part', dropChannel: 'special', unique: false, stackable: true, consumable: true },
+  { id: 'gear_body',     name: 'Бронежилет промзоны', rarity: 'rare',     type: 'gear', slot: 'body',      activities: ['training'], glyph: '⛨', role: 'gear', dropChannel: 'special', unique: true, stackable: false, consumable: false },
+  { id: 'gear_legs',     name: 'Армированные штаны',  rarity: 'rare',     type: 'gear', slot: 'legs',      activities: ['training'], glyph: '◫', role: 'gear', dropChannel: 'special', unique: true, stackable: false, consumable: false },
+  { id: 'gear_hands',    name: 'Рабочие перчатки',    rarity: 'rare',     type: 'gear', slot: 'hands',     activities: ['training'], glyph: '◠', role: 'gear', dropChannel: 'special', unique: true, stackable: false, consumable: false },
+  { id: 'gear_backpack', name: 'Тактический рюкзак',  rarity: 'rare',     type: 'gear', slot: 'backpack',  activities: ['training'], glyph: '⌂', role: 'gear', dropChannel: 'special', unique: true, stackable: false, consumable: false },
+  { id: 'pm9',           name: '«ПМ-9»',              rarity: 'uncommon', type: 'gear', slot: 'weapon',   activities: ['training'], glyph: '◎', role: 'gear', dropChannel: 'special', unique: true, stackable: false, consumable: false },
+  { id: 'turbogen_fragment', name: 'Осколок довоенного турбогенератора', rarity: 'legendary', type: 'collectible', activities: ['training'], glyph: '✷', role: 'legendary', dropChannel: 'special', unique: true, stackable: false, consumable: false },
 
   /* ── Радиовышка (Испанский) ───────────────────────────────────────────── */
   { id: 'radio_fragment', name: 'Обломок радиоблока',    rarity: 'common',   type: 'material', activities: ['spanish', 'reading'], glyph: '⌁', dropChannel: 'material', unique: false, stackable: true, consumable: true },
@@ -710,23 +710,23 @@ const ITEMS = [
   { id: 'sector_pass',    name: 'Просроченный пропуск',  rarity: 'uncommon', type: 'material', activities: ['spanish', 'reading'], glyph: '▣', dropChannel: 'material', unique: false, stackable: true, consumable: true },
   { id: 'corroded_badge', name: 'Коррозированный жетон', rarity: 'uncommon', type: 'material', activities: ['reading', 'spanish'], glyph: '⬡', dropChannel: 'material', unique: false, stackable: true, consumable: true },
   { id: 'cipher_sheet',   name: 'Шифровальный бланк',    rarity: 'uncommon', type: 'material',  activities: ['spanish', 'handwriting'], glyph: '⌬', dropChannel: 'material', unique: false, stackable: true, consumable: true },
-  { id: 'gear_head', name: 'Каска радиста',      rarity: 'rare', type: 'gear', slot: 'head', activities: ['spanish'], glyph: '◯', dropChancePerSortie: 7, dropChancePerSortieDeep: 11, role: 'gear', dropChannel: 'special', unique: true, stackable: false, consumable: false },
-  { id: 'gear_face', name: 'Противогаз-фильтр',   rarity: 'rare', type: 'gear', slot: 'face', activities: ['spanish'], glyph: '◒', dropChancePerSortie: 7, dropChancePerSortieDeep: 11, role: 'gear', dropChannel: 'special', unique: true, stackable: false, consumable: false },
-  { id: 'gear_rig',  name: 'Антенная разгрузка',  rarity: 'rare', type: 'gear', slot: 'rig',  activities: ['spanish'], glyph: '⌆', dropChancePerSortie: 7, dropChancePerSortieDeep: 11, role: 'gear', dropChannel: 'special', unique: true, stackable: false, consumable: false },
-  { id: 'dielectric_stabilizer', name: 'Диэлектрический стабилизатор', rarity: 'very_rare', type: 'artifact', activities: ['spanish'], glyph: '⍟', dropChancePerSortie: 8, role: 'key_artifact', dropChannel: 'special', unique: true, stackable: false, consumable: false },
-  { id: 'callsign_tape', name: 'Кассета с позывными', rarity: 'legendary', type: 'collectible', activities: ['spanish'], glyph: '✧', dropChancePerSortie: 2, dropChancePerSortieDeep: 4, role: 'legendary', dropChannel: 'special', unique: true, stackable: false, consumable: false },
+  { id: 'gear_head', name: 'Каска радиста',      rarity: 'rare', type: 'gear', slot: 'head', activities: ['spanish'], glyph: '◯', role: 'gear', dropChannel: 'special', unique: true, stackable: false, consumable: false },
+  { id: 'gear_face', name: 'Противогаз-фильтр',   rarity: 'rare', type: 'gear', slot: 'face', activities: ['spanish'], glyph: '◒', role: 'gear', dropChannel: 'special', unique: true, stackable: false, consumable: false },
+  { id: 'gear_rig',  name: 'Антенная разгрузка',  rarity: 'rare', type: 'gear', slot: 'rig',  activities: ['spanish'], glyph: '⌆', role: 'gear', dropChannel: 'special', unique: true, stackable: false, consumable: false },
+  { id: 'dielectric_stabilizer', name: 'Диэлектрический стабилизатор', rarity: 'very_rare', type: 'artifact', activities: ['spanish'], glyph: '⍟', role: 'key_artifact', dropChannel: 'special', unique: true, stackable: false, consumable: false },
+  { id: 'callsign_tape', name: 'Кассета с позывными', rarity: 'legendary', type: 'collectible', activities: ['spanish'], glyph: '✧', role: 'legendary', dropChannel: 'special', unique: true, stackable: false, consumable: false },
 
   /* ── Архив (Прописи) ──────────────────────────────────────────────────── */
   { id: 'damp_notebook', name: 'Сырая записная книжка', rarity: 'common', type: 'material', activities: ['handwriting', 'reading'], glyph: '▤', dropChannel: 'material', unique: false, stackable: true, consumable: true },
   { id: 'ink_cartridge', name: 'Чернильный картридж',   rarity: 'common', type: 'material', activities: ['handwriting'], glyph: '⌑', dropChannel: 'material', unique: false, stackable: true, consumable: true },
-  { id: 'registrar_seal', name: 'Печать регистратора', rarity: 'rare', type: 'collectible', activities: ['handwriting'], glyph: '◘', dropChancePerSortie: 12, role: 'contract_part', dropChannel: 'special', unique: true, stackable: false, consumable: false },
+  { id: 'registrar_seal', name: 'Печать регистратора', rarity: 'rare', type: 'material', activities: ['handwriting'], glyph: '◘', role: 'contract_part', dropChannel: 'special', unique: false, stackable: true, consumable: true },
 
   /* ── Книгохранилище (Чтение) ──────────────────────────────────────────── */
   { id: 'microfiche', name: 'Микрофиша', rarity: 'uncommon', type: 'material', activities: ['reading'], glyph: '▯', dropChannel: 'material', unique: false, stackable: true, consumable: true },
-  { id: 'catalog_card', name: 'Каталожная карта архива', rarity: 'rare', type: 'collectible', activities: ['reading'], glyph: '▭', dropChancePerSortie: 12, role: 'contract_part', dropChannel: 'special', unique: true, stackable: false, consumable: false },
+  { id: 'catalog_card', name: 'Каталожная карта архива', rarity: 'rare', type: 'material', activities: ['reading'], glyph: '▭', role: 'contract_part', dropChannel: 'special', unique: false, stackable: true, consumable: true },
 
   /* ── Артефакт (кросс-локационный) ─────────────────────────────────────── */
-  { id: 'void_fragment', name: 'Фрагмент пустоты', rarity: 'legendary', type: 'artifact', activities: ['spanish', 'handwriting', 'training', 'reading'], glyph: '◉', dropChancePerSortie: 2, dropChancePerSortieDeep: 4, role: 'legendary', dropChannel: 'special', unique: true, stackable: false, consumable: false },
+  { id: 'void_fragment', name: 'Фрагмент пустоты', rarity: 'legendary', type: 'artifact', activities: ['spanish', 'handwriting', 'training', 'reading'], glyph: '◉', role: 'legendary', dropChannel: 'special', unique: true, stackable: false, consumable: false },
 
   /* ── Медицина (по чуть-чуть во всех локациях) ─────────────────────────── */
   { id: 'aidulin',       name: 'Айдулин',           rarity: 'common',   type: 'material', activities: ['spanish', 'handwriting', 'training', 'reading'], glyph: '✚', dropChannel: 'material', unique: false, stackable: true, consumable: true },
@@ -737,6 +737,48 @@ const ITEMS = [
   { id: 'traction_battery', name: 'Тяговый аккумулятор', rarity: 'uncommon', type: 'material', activities: ['spanish', 'training'], glyph: '⏚', dropChannel: 'material', unique: false, stackable: true, consumable: true },
   { id: 'combo_backpack', name: 'Экспедиционный рюкзак', rarity: 'rare', type: 'gear', slot: 'backpack', activities: [], glyph: '▥', role: 'gear', dropChannel: 'special', unique: true, stackable: false, consumable: false },
 ];
+
+/* ── SECTOR LOOT PROFILES ────────────────────────────────────────────────── */
+/* specialChance: 0..1 chance that card 3 (see rollLootV2) produces anything
+   from the special channel at all — equalized across every base sector so no
+   location is more "attractive" than another; only the channels (which roles
+   are available, and their relative weight) differ, which is where each
+   sector's actual content/flavor comes from. specialChanceDeep is the (not
+   yet reachable — no deep-sector selection exists) deep-sector variant.
+   channels[].weight is only relative *within* a sector's own specialChance
+   envelope — it does not need to sum to anything in particular. */
+const SECTOR_LOOT_PROFILES = {
+  'Промдвор': {
+    specialChance: 0.20, specialChanceDeep: 0.30,
+    channels: [
+      { role: 'gear',          weight: 7 },
+      { role: 'contract_part', weight: 12 },
+      { role: 'legendary',     weight: 2 },
+    ],
+  },
+  'Радиовышка': {
+    specialChance: 0.20, specialChanceDeep: 0.30,
+    channels: [
+      { role: 'gear',         weight: 7 },
+      { role: 'key_artifact', weight: 8 },
+      { role: 'legendary',    weight: 2 },
+    ],
+  },
+  'Архив': {
+    specialChance: 0.20, specialChanceDeep: 0.30,
+    channels: [
+      { role: 'contract_part', weight: 12 },
+      { role: 'legendary',     weight: 2 },
+    ],
+  },
+  'Книгохранилище': {
+    specialChance: 0.20, specialChanceDeep: 0.30,
+    channels: [
+      { role: 'contract_part', weight: 12 },
+      { role: 'legendary',     weight: 2 },
+    ],
+  },
+};
 
 /* ── ACHIEVEMENTS ────────────────────────────────────────────────────────── */
 /* Дни считаются накопительно (всего), а не подряд — конфликт 1 решён в пользу
@@ -865,6 +907,51 @@ const CONTRACT_TEMPLATES = [
     requires: [{ itemId: 'traction_battery', qty: 3 }],
     reward: { items: [{ itemId: 'combo_backpack', qty: 1 }], displaySlot: true } },
 ];
+
+const GEAR_SLOTS = ['head', 'face', 'body', 'legs', 'hands', 'rig', 'backpack', 'weapon'];
+
+/* Sanity-checks the static config (ITEMS/SECTOR_LOOT_PROFILES/CONTRACT_
+   TEMPLATES) at startup. Logs every violation found rather than throwing —
+   a config bug shouldn't take down the whole page for whoever's playing. */
+function validateConfigs() {
+  const errors = [];
+
+  Object.entries(SECTOR_LOOT_PROFILES).forEach(([loc, profile]) => {
+    if (!(profile.specialChance >= 0 && profile.specialChance <= 1)) {
+      errors.push('SECTOR_LOOT_PROFILES.' + loc + '.specialChance out of 0..1: ' + profile.specialChance);
+    }
+    if (profile.specialChanceDeep != null && !(profile.specialChanceDeep >= 0 && profile.specialChanceDeep <= 1)) {
+      errors.push('SECTOR_LOOT_PROFILES.' + loc + '.specialChanceDeep out of 0..1: ' + profile.specialChanceDeep);
+    }
+    const act = ACTIVITIES.find(a => a.location === loc);
+    profile.channels.forEach(ch => {
+      if (!(ch.weight > 0)) errors.push('SECTOR_LOOT_PROFILES.' + loc + ' channel "' + ch.role + '" has non-positive weight');
+      if (act && !ITEMS.some(i => i.role === ch.role && i.activities.includes(act.id))) {
+        errors.push('SECTOR_LOOT_PROFILES.' + loc + ' references role "' + ch.role + '" with no matching item');
+      }
+    });
+  });
+
+  const baseChances = new Set(Object.values(SECTOR_LOOT_PROFILES).map(p => p.specialChance));
+  if (baseChances.size > 1) {
+    errors.push('SECTOR_LOOT_PROFILES.specialChance is not equalized across sectors: ' + [...baseChances].join(', '));
+  }
+
+  CONTRACT_TEMPLATES.forEach(t => {
+    t.requires.forEach(r => {
+      const item = byId(r.itemId);
+      if (!item) { errors.push('CONTRACT_TEMPLATES.' + t.id + ' requires unknown item "' + r.itemId + '"'); return; }
+      if (!item.consumable) errors.push('CONTRACT_TEMPLATES.' + t.id + ' requires non-consumable item "' + r.itemId + '"');
+    });
+  });
+
+  GEAR_SLOTS.forEach(slot => {
+    if (!ITEMS.some(i => i.type === 'gear' && i.slot === slot)) errors.push('No gear item covers slot "' + slot + '"');
+  });
+
+  if (errors.length) errors.forEach(e => console.error('[config validation]', e));
+  return errors;
+}
 
 /* ── STORAGE ─────────────────────────────────────────────────────────────── */
 const KEY = 'raidlog_v1';
@@ -1117,11 +1204,13 @@ function hasRareOrAbove(state) {
 
 /* ── LOOT ────────────────────────────────────────────────────────────────── */
 /* Card 1 is always common. Card 2 rolls common/uncommon off the shared table.
-   Card 3 tries a special roll (gear/artifact/key part/legendary, each its own
-   flat dropChancePerSortie) and falls back to a card-2-style material roll on
-   miss. Rarity above uncommon only ever comes from the special channel — gear/
-   artifact/collectible items that already exist in discoveries are excluded,
-   so they can never redrop. No pity: misses don't raise future odds. */
+   Card 3 rolls the sector's specialChance (0..1); on success it picks a role
+   from that sector's weighted channels (SECTOR_LOOT_PROFILES) and an item of
+   that role, falling back to a card-2-style material roll on miss or if every
+   item for the available roles has already been found. unique items that
+   already exist in discoveries are excluded, so they can never redrop —
+   non-unique special-channel items (contract_part) stay eligible forever.
+   No pity: misses don't raise future odds. */
 const MATERIAL_RARITY_TABLE = { common: 78, uncommon: 22 };
 
 function isDiscoveredOrOwned(item) { return !!DB.discoveries[item.id]; }
@@ -1145,26 +1234,28 @@ function rollMaterial(actId, rarity, exclude) {
   return otherPool.length ? pickRandom(otherPool) : null;
 }
 
-function specialPool(actId, predicate, exclude) {
-  return ITEMS.filter(i => predicate(i) && i.activities.includes(actId) && !exclude.has(i.id) && !isDiscoveredOrOwned(i));
+function specialPool(actId, role, exclude) {
+  return ITEMS.filter(i => i.role === role && i.activities.includes(actId) && !exclude.has(i.id) && (!i.unique || !isDiscoveredOrOwned(i)));
 }
 
 function rollSpecial(actId, exclude) {
-  const buckets = [
-    specialPool(actId, i => i.type === 'gear', exclude),
-    specialPool(actId, i => i.type === 'artifact' && i.rarity !== 'legendary', exclude),
-    specialPool(actId, i => i.type === 'collectible' && i.rarity !== 'legendary', exclude),
-    specialPool(actId, i => i.rarity === 'legendary', exclude),
-  ]
-    .filter(pool => pool.length > 0)
-    .map(pool => ({ pool, chance: pool[0].dropChancePerSortie }));
+  const act = byAct(actId);
+  const profile = act && SECTOR_LOOT_PROFILES[act.location];
+  if (!profile) return null;
+  if (Math.random() >= profile.specialChance) return null;
 
-  let r = Math.random() * 100;
+  const buckets = profile.channels
+    .map(ch => ({ weight: ch.weight, pool: specialPool(actId, ch.role, exclude) }))
+    .filter(b => b.pool.length > 0);
+  if (!buckets.length) return null;
+
+  const total = buckets.reduce((s, b) => s + b.weight, 0);
+  let r = Math.random() * total;
   for (const b of buckets) {
-    if (r < b.chance) return pickRandom(b.pool);
-    r -= b.chance;
+    if (r < b.weight) return pickRandom(b.pool);
+    r -= b.weight;
   }
-  return null;
+  return pickRandom(buckets[buckets.length - 1].pool);
 }
 
 function rollLootV2(actId) {
@@ -2194,6 +2285,7 @@ document.addEventListener('keydown', e => {
 })();
 
 /* ── INIT ────────────────────────────────────────────────────────────────── */
+validateConfigs();
 render();
 
 /* re-show a reveal the user hadn't dismissed before the page reloaded — the
