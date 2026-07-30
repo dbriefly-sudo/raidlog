@@ -1161,14 +1161,22 @@ function localDate(d = new Date()) {
     String(d.getDate()).padStart(2,'0');
 }
 
-function fmtDateTime(iso) {
+/* tz, when given, pins the display to that IANA zone instead of the viewer's
+   current one — a session's time should read the same regardless of which
+   timezone the person looking at it is in right now (or has since travelled
+   to); every session already records its own timeZone for exactly this. */
+function fmtDateTime(iso, tz) {
   const d = new Date(iso);
-  return d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'}) +
-    ' ' + d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+  const dOpts = { day:'2-digit', month:'2-digit', year:'numeric' };
+  const tOpts = { hour:'2-digit', minute:'2-digit' };
+  if (tz) { dOpts.timeZone = tz; tOpts.timeZone = tz; }
+  return d.toLocaleDateString('ru-RU', dOpts) + ' ' + d.toLocaleTimeString('ru-RU', tOpts);
 }
 
-function fmtTime(iso) {
-  return new Date(iso).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+function fmtTime(iso, tz) {
+  const tOpts = { hour:'2-digit', minute:'2-digit' };
+  if (tz) tOpts.timeZone = tz;
+  return new Date(iso).toLocaleTimeString('ru-RU', tOpts);
 }
 
 function fmtDate(iso) {
@@ -2072,7 +2080,7 @@ function showDayDetail(date) {
     sessions.forEach(s => {
       const drops = (s.drops||[]).map(d => byId(d.itemId)?.name||'').filter(Boolean).join(', ');
       inner += `<div class="dd-sess">
-        <div class="dd-hd">${byAct(s.activityId)?.name||''} | ${fmtTime(s.completedAt)}</div>
+        <div class="dd-hd">${byAct(s.activityId)?.name||''} | ${fmtTime(s.completedAt, s.timeZone)}</div>
         <div class="dd-drops">${drops}</div>
       </div>`;
     });
@@ -2220,7 +2228,7 @@ function sessionsLogRows() {
   const header = [S.logColDate, S.logColTime, S.logColAct, S.logColXp, S.logColDrops];
   const body = DB.sessions.map(s => [
     s.localDate || '',
-    fmtTime(s.completedAt),
+    fmtTime(s.completedAt, s.timeZone),
     byAct(s.activityId)?.name || s.activityId,
     s.xpAwarded || 0,
     (s.drops || []).map(d => byId(d.itemId)?.name || d.itemId).join(', '),
