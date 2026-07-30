@@ -1453,14 +1453,25 @@ function comboTemplatesEligible() {
 }
 
 /* only ever called from completeSortie(), gated to the first real sortie of a
-   new day — never on app open. Seeds the board (4 location contracts + the
-   med contract) the first time it ever runs, then tops up one contract per
-   location (capped at 10 active total) on every subsequent day. */
+   new day — never on app open, never from just viewing the calendar. Each
+   location is a single regular slot: generation only fills it if it's empty
+   (no active regular contract for that location already), so a contract that
+   hasn't been submitted yet doesn't get a duplicate stacked on top of it —
+   it's replaced only once the player closes it out AND the next real sortie
+   of a later day runs. Seeds all 4 slots + the med contract the first time
+   this ever runs. Combo/chain contracts aren't slotted — they can coexist
+   alongside the 4 regular ones, temporarily growing the board up to the
+   10-total cap. */
 function generateContracts(dateStr) {
   const isFirstEver = DB.contracts.lastGeneratedLocalDate === null;
 
   ACTIVITIES.forEach(a => {
     if (DB.contracts.active.length >= 10) return;
+    const slotOccupied = DB.contracts.active.some(inst => {
+      const t = contractTemplate(inst.templateId);
+      return t && !t.combo && t.location === a.location;
+    });
+    if (slotOccupied) return;
     const tpl = CONTRACT_TEMPLATES.find(t => !t.combo && t.location === a.location);
     if (tpl) DB.contracts.active.push({ id: uid(), templateId: tpl.id });
   });
