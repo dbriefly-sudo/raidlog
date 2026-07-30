@@ -354,6 +354,26 @@ body::after {
   -webkit-user-select: none;
 }
 
+/* DEV PANEL */
+.dev-panel { margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--r-rare); }
+.dev-sub { font-size: 14px; color: var(--dim); letter-spacing: 1px; text-transform: uppercase; margin: 14px 0 6px; }
+.dev-grant-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.dev-select {
+  flex: 1; min-width: 0;
+  background: var(--bg2); border: 1px solid var(--brd);
+  color: var(--fg); font-family: var(--font);
+  font-size: 14px; padding: 10px 8px;
+}
+.dev-grant-btn { flex-shrink: 0; width: auto; margin-bottom: 0; padding: 10px 16px; }
+.dev-toggle-row { display: flex; align-items: center; justify-content: space-between; font-size: 14px; color: var(--fg); padding: 8px 0 16px; }
+.dev-switch {
+  background: none; border: 1px solid var(--brd);
+  color: var(--dim); font-family: var(--font);
+  font-size: 13px; letter-spacing: 1px;
+  padding: 5px 12px; cursor: pointer; text-transform: uppercase;
+}
+.dev-switch.on { border-color: var(--r-rare); color: var(--r-rare); }
+
 /* MODAL */
 .ov {
   position: fixed; inset: 0;
@@ -628,6 +648,17 @@ const S = {
   confirmBtn: 'ПОДТВЕРДИТЬ',
   dataInfo: 'Прогресс хранится только в этом браузере. Для переноса на другое устройство используйте экспорт.',
   devTag: 'DEV',
+  devPanelTitle: 'РЕЖИМ РАЗРАБОТЧИКА',
+  devFakeSortiesBtn: '+10 ФЕЙКОВЫХ ВЫЛАЗОК',
+  devGrantTitle: 'ВЫДАТЬ ПРЕДМЕТ',
+  devGrantBtn: 'ВЫДАТЬ',
+  devUngateLabel: 'СНЯТЬ ГЕЙТИНГ УРОВНЕЙ',
+  devClearBtn: 'ОЧИСТИТЬ DEV-СЛЕДЫ',
+  devNoLocation: 'БЕЗ ЛОКАЦИИ',
+  devOn: 'ВКЛ',
+  devOff: 'ВЫКЛ',
+  sourceDev: 'Разработчик',
+  sourceContract: 'Контракт',
   months: ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'],
   weekdays: ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'],
   rarities: { common:'обычный', uncommon:'необычный', rare:'редкий', very_rare:'очень редкий', legendary:'легендарный' },
@@ -790,6 +821,7 @@ const LEVEL_UNLOCKS = [
 ];
 
 function isSystemUnlocked(id, lvl) {
+  if (devMode && devUngateLevels) return true;
   const u = LEVEL_UNLOCKS.find(x => x.id === id);
   return !u || lvl >= u.level;
 }
@@ -832,6 +864,7 @@ const CONTRACT_TEMPLATES = [
 const KEY = 'raidlog_v1';
 const APP_VERSION = '0.9.0';
 const DEV_MODE_KEY = 'raidlog_devmode_v1';
+const DEV_UNGATE_KEY = 'raidlog_dev_ungate_v1';
 
 function emptyDB() {
   return {
@@ -852,6 +885,10 @@ function emptyDB() {
     achievements: { unlocked: {} },
     unlockedSectors: [],
     settings: {},
+    devGrants: [],   // items handed out via the dev panel, kept separate from
+                      // sessions specifically so they carry no XP; tracked here
+                      // (not in a dev-only localStorage key) purely so ОЧИСТИТЬ
+                      // DEV-СЛЕДЫ can find and reverse them after a reload
   };
 }
 
@@ -901,6 +938,7 @@ function normalizeDB(d) {
   d.achievements.unlocked = (d.achievements.unlocked && typeof d.achievements.unlocked === 'object') ? d.achievements.unlocked : {};
   d.unlockedSectors = Array.isArray(d.unlockedSectors) ? d.unlockedSectors : [];
   d.settings = (d.settings && typeof d.settings === 'object') ? d.settings : {};
+  d.devGrants = Array.isArray(d.devGrants) ? d.devGrants : [];
   return d;
 }
 
@@ -1146,14 +1184,21 @@ function rollLootV2(actId) {
 }
 
 /* ── ACTIONS ─────────────────────────────────────────────────────────────── */
-function applyDrops(drops, actId, dateStr) {
+/* kind classifies how a discovery was first made ('loot'/'contract'/'dev') —
+   only informational (shown in the item detail modal), doesn't affect
+   mechanics. Guarded against overwriting an existing discoveries entry so
+   firstSource stays true to its name if applyDrops is ever called twice for
+   the same non-repeatable item (e.g. the dev grant tool bypasses the normal
+   no-redrop check on purpose). */
+function applyDrops(drops, actId, dateStr, kind) {
+  kind = kind || 'loot';
   drops.forEach(d => {
     const item = byId(d.itemId);
     if (!item) return;
     if (item.type === 'material') {
       DB.inventory[item.id] = (DB.inventory[item.id] || 0) + 1;
     } else {
-      DB.discoveries[item.id] = { date: dateStr, source: actId };
+      if (!DB.discoveries[item.id]) DB.discoveries[item.id] = { date: dateStr, source: actId, firstSource: { kind, activityId: actId } };
       if (item.type === 'gear' && !DB.gear.owned.includes(item.id)) DB.gear.owned.push(item.id);
     }
   });
@@ -1238,7 +1283,7 @@ function submitContract(activeId) {
   const sourceActId = tpl.location ? (ACTIVITIES.find(a => a.location === tpl.location)?.id || 'contract') : 'contract';
   const rewardDrops = [];
   (tpl.reward.items || []).forEach(ri => { for (let k = 0; k < ri.qty; k++) rewardDrops.push({ itemId: ri.itemId }); });
-  applyDrops(rewardDrops, sourceActId, localDate());
+  applyDrops(rewardDrops, sourceActId, localDate(), 'contract');
   if (tpl.reward.displaySlot) DB.displaySlots.push(null);
 
   DB.contracts.completed.push({
@@ -1251,11 +1296,16 @@ function submitContract(activeId) {
   return { tpl, grantedItems: rewardDrops.map(d => d.itemId) };
 }
 
-function completeSortie(actId) {
-  const now = new Date();
+/* opts.date/opts.source let the dev panel run real (backdated) sorties through
+   this exact pipeline instead of a separate simulation. A backdated sortie
+   never touches contract generation — that stays gated to real, same-day
+   play, so a fake past date can't corrupt lastGeneratedLocalDate. */
+function completeSortie(actId, opts) {
+  opts = opts || {};
+  const now = opts.date || new Date();
   const dateStr = localDate(now);
   const drops = rollLootV2(actId);
-  applyDrops(drops, actId, dateStr);
+  applyDrops(drops, actId, dateStr, opts.source === 'dev' ? 'dev' : 'loot');
 
   const sess = {
     id: uid(),
@@ -1266,9 +1316,10 @@ function completeSortie(actId) {
     xpAwarded: 10,
     drops,
   };
+  if (opts.source) sess.source = opts.source;
   DB.sessions.push(sess);
 
-  if (DB.contracts.lastGeneratedLocalDate !== dateStr) generateContracts(dateStr);
+  if (!opts.date && DB.contracts.lastGeneratedLocalDate !== dateStr) generateContracts(dateStr);
 
   save();
   return sess;
@@ -1286,6 +1337,93 @@ function checkNewAchievements() {
   return fresh;
 }
 
+/* ── DEV TOOLS ───────────────────────────────────────────────────────────── */
+/* Everything here is a no-op when devMode is off, on top of the panel that
+   calls them not existing in the DOM at all in that case — belt and braces
+   against a stray call (console, leftover timer) doing something real. */
+
+/* runs real completeSortie() calls on backdated dates, so loot/discoveries/
+   achievements/XP all go through the exact same pipeline as a real sortie */
+function generateFakeSorties(count) {
+  if (!devMode) return;
+  for (let i = 0; i < count; i++) {
+    const act = ACTIVITIES[Math.floor(Math.random() * ACTIVITIES.length)];
+    const date = new Date();
+    date.setDate(date.getDate() - Math.floor(Math.random() * 14));
+    date.setHours(Math.floor(Math.random() * 24), Math.floor(Math.random() * 60), Math.floor(Math.random() * 60), 0);
+    completeSortie(act.id, { date, source: 'dev' });
+  }
+  checkNewAchievements();
+  render();
+}
+
+function itemsByLocationForDev() {
+  const groups = {};
+  ACTIVITIES.forEach(a => { groups[a.location] = []; });
+  const noLocation = [];
+  ITEMS.forEach(item => {
+    const act = item.activities.length ? ACTIVITIES.find(a => a.id === item.activities[0]) : null;
+    if (act) groups[act.location].push(item); else noLocation.push(item);
+  });
+  return { groups, noLocation };
+}
+
+/* grants exactly one item through the same crediting code as loot (inventory
+   stacks / discoveries+gear.owned), tagged firstSource.kind:'dev'. Deliberately
+   does NOT touch DB.sessions — a debug grant shouldn't hand out XP the way a
+   real sortie does. devGrants records it so ОЧИСТИТЬ DEV-СЛЕДЫ can find and
+   reverse it later, since it leaves no session behind to reverse from. */
+function grantItemDev(itemId) {
+  if (!devMode) return false;
+  const item = byId(itemId);
+  if (!item) return false;
+  applyDrops([{ itemId }], 'dev', localDate(), 'dev');
+  DB.devGrants.push({ itemId });
+  checkNewAchievements();
+  save();
+  return true;
+}
+
+/* removes every source:'dev' session and every devGrants entry, reversing
+   exactly what each contributed (same clamp-at-zero safety as the old undo
+   had): material counts decrement but never go negative (some of a dev-
+   granted stack may have since been spent on a real contract), and a non-
+   material item is only removed if its discovery is still attributed to a
+   dev source (never true here, since non-repeatable items can't be granted
+   twice, but kept as a guard rather than an assumption) */
+function clearDevTraces() {
+  if (!devMode) return 0;
+
+  function reverseDrop(itemId) {
+    const item = byId(itemId);
+    if (!item) return;
+    if (item.type === 'material') {
+      const next = (DB.inventory[item.id] || 0) - 1;
+      if (next > 0) DB.inventory[item.id] = next; else delete DB.inventory[item.id];
+    } else {
+      const disc = DB.discoveries[item.id];
+      if (disc && disc.firstSource && disc.firstSource.kind === 'dev') {
+        delete DB.discoveries[item.id];
+        if (item.type === 'gear') {
+          const idx = DB.gear.owned.indexOf(item.id);
+          if (idx !== -1) DB.gear.owned.splice(idx, 1);
+        }
+      }
+    }
+  }
+
+  const devSessions = DB.sessions.filter(s => s.source === 'dev');
+  devSessions.forEach(sess => (sess.drops || []).forEach(d => reverseDrop(d.itemId)));
+  DB.devGrants.forEach(g => reverseDrop(g.itemId));
+
+  DB.sessions = DB.sessions.filter(s => s.source !== 'dev');
+  DB.devGrants = [];
+
+  save();
+  render();
+  return devSessions.length;
+}
+
 /* ── STATE ───────────────────────────────────────────────────────────────── */
 let tab = 'sortie';
 let tabStack = [];   // screens (system/contracts) can open from one another, so a
@@ -1296,6 +1434,7 @@ let armedTimer = null;
 let calY = new Date().getFullYear();
 let calM = new Date().getMonth() + 1;
 let devMode = localStorage.getItem(DEV_MODE_KEY) === '1';
+let devUngateLevels = localStorage.getItem(DEV_UNGATE_KEY) === '1'; // only has any effect while devMode is also on
 let versionTapCount = 0;
 let versionTapTimer = null;
 
@@ -1310,6 +1449,16 @@ function tapVersion() {
   try {
     if (devMode) localStorage.setItem(DEV_MODE_KEY, '1');
     else localStorage.removeItem(DEV_MODE_KEY);
+  } catch(_) {}
+  renderCurrent();
+}
+
+function toggleDevUngate() {
+  if (!devMode) return;
+  devUngateLevels = !devUngateLevels;
+  try {
+    if (devUngateLevels) localStorage.setItem(DEV_UNGATE_KEY, '1');
+    else localStorage.removeItem(DEV_UNGATE_KEY);
   } catch(_) {}
   renderCurrent();
 }
@@ -1530,7 +1679,7 @@ function renderAchievements(el) {
 /* ── SYSTEM ──────────────────────────────────────────────────────────────── */
 function renderSystem(el) {
   const lvl = levelInfo(totalXP()).level;
-  const systemsHtml = LEVEL_UNLOCKS.map(u => lvl >= u.level
+  const systemsHtml = LEVEL_UNLOCKS.map(u => isSystemUnlocked(u.id, lvl)
     ? `<div class="sys-row sys-on"><span class="sys-mark">✓</span> ${u.label}</div>`
     : `<div class="sys-row sys-off"><span class="sys-mark">⚿</span> ${S.level} ${u.level}: ${u.label}</div>`
   ).join('');
@@ -1550,7 +1699,42 @@ function renderSystem(el) {
       <button class="d-btn dng" data-a="reset">${S.resetBtn}</button>
       <div class="d-info">${S.dataInfo}</div>
       <div class="app-version" data-a="version-tap">RAIDLOG v${APP_VERSION}${devMode ? ' · ' + S.devTag : ''}</div>
+      ${devMode ? renderDevPanel() : ''}
     </div>`;
+}
+
+function renderDevPanel() {
+  const { groups, noLocation } = itemsByLocationForDev();
+  let optionsHtml = '';
+  ACTIVITIES.forEach(a => {
+    if (!groups[a.location].length) return;
+    optionsHtml += `<optgroup label="${a.location}">` +
+      groups[a.location].map(item => `<option value="${item.id}">${item.glyph} ${item.name}</option>`).join('') +
+      `</optgroup>`;
+  });
+  if (noLocation.length) {
+    optionsHtml += `<optgroup label="${S.devNoLocation}">` +
+      noLocation.map(item => `<option value="${item.id}">${item.glyph} ${item.name}</option>`).join('') +
+      `</optgroup>`;
+  }
+
+  return `<div class="dev-panel">
+    <div class="ms-title">${S.devPanelTitle}</div>
+    <button class="d-btn" data-a="dev-fake-sorties">${S.devFakeSortiesBtn}</button>
+
+    <div class="dev-sub">${S.devGrantTitle}</div>
+    <div class="dev-grant-row">
+      <select id="dev-item-select" class="dev-select">${optionsHtml}</select>
+      <button class="d-btn dev-grant-btn" data-a="dev-grant-item">${S.devGrantBtn}</button>
+    </div>
+
+    <div class="dev-toggle-row">
+      <span>${S.devUngateLabel}</span>
+      <button class="dev-switch${devUngateLevels ? ' on' : ''}" data-a="dev-toggle-ungate">${devUngateLevels ? S.devOn : S.devOff}</button>
+    </div>
+
+    <button class="d-btn dng" data-a="dev-clear-traces">${S.devClearBtn}</button>
+  </div>`;
 }
 
 /* ── CONTRACTS SCREEN ────────────────────────────────────────────────────── */
@@ -1636,8 +1820,12 @@ function showInvDetail(itemId) {
     ? `${S.detailCnt}: <span>${DB.inventory[itemId] || 0}</span>`
     : (() => {
         const disc = DB.discoveries[itemId];
+        const kind = disc && disc.firstSource && disc.firstSource.kind;
+        const sourceLabel = kind === 'dev' ? S.sourceDev
+          : kind === 'contract' ? S.sourceContract
+          : (disc && byAct(disc.source)?.name) || '—';
         return `${S.detailDate}: <span>${disc ? fmtDate(disc.date) : '—'}</span><br>
-        ${S.detailAct}: <span>${disc ? (byAct(disc.source)?.name||'—') : '—'}</span>`;
+        ${S.detailAct}: <span>${disc ? sourceLabel : '—'}</span>`;
       })();
 
   mc.innerHTML = `<div class="ov" id="det-ov">
@@ -1875,6 +2063,17 @@ document.addEventListener('click', async e => {
     case 'open-contracts': openScreen('contracts');  break;
     case 'close-contracts': closeScreen();           break;
     case 'version-tap':    tapVersion();              break;
+
+    case 'dev-fake-sorties': generateFakeSorties(10); break;
+
+    case 'dev-grant-item': {
+      const sel = document.getElementById('dev-item-select');
+      if (sel && sel.value && grantItemDev(sel.value)) render();
+      break;
+    }
+
+    case 'dev-toggle-ungate': toggleDevUngate(); break;
+    case 'dev-clear-traces':  clearDevTraces();  break;
 
     case 'complete': {
       if (sortieBusy) return;
