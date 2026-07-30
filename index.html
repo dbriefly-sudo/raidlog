@@ -1229,6 +1229,31 @@ function displayCapacity() {
   return 1 + (level() >= 3 ? 1 : 0) + (DB.bonusDisplaySlots || 0);
 }
 
+/* sum of the best-ever-FOUND item per gear slot + the two best-ever-found
+   artifacts (type artifact, any role) — deliberately reads discoveries, never
+   gear.appearance: what's currently equipped/worn is cosmetic only and must
+   never move this number. Rarity rank+1 so even a common find contributes
+   (rank 0 would otherwise be worth nothing). */
+function equipmentClass() {
+  let total = 0;
+  GEAR_SLOTS.forEach(slot => {
+    let best = -1;
+    ITEMS.forEach(item => {
+      if (item.type === 'gear' && item.slot === slot && DB.discoveries[item.id]) {
+        const rank = RARITY_ORDER.indexOf(item.rarity);
+        if (rank > best) best = rank;
+      }
+    });
+    if (best >= 0) total += best + 1;
+  });
+  const artifactRanks = ITEMS
+    .filter(i => i.type === 'artifact' && DB.discoveries[i.id])
+    .map(i => RARITY_ORDER.indexOf(i.rarity) + 1)
+    .sort((a, b) => b - a)
+    .slice(0, 2);
+  return total + artifactRanks.reduce((s, r) => s + r, 0);
+}
+
 function sessCount(actId) {
   return actId
     ? DB.sessions.filter(s => s.activityId === actId).length
