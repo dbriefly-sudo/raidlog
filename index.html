@@ -155,6 +155,16 @@ body::after {
 .ach-card.done { border-color: var(--acc); }
 .ach-card.done .ach-title { color: var(--acc); }
 
+.ach-collapsed { border: 1px solid var(--brd); background: var(--bg2); margin-bottom: 10px; }
+.ach-collapsed summary {
+  padding: 10px 12px; font-size: 14px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--dim); cursor: pointer; list-style: none;
+}
+.ach-collapsed summary::-webkit-details-marker { display: none; }
+.ach-collapsed[open] summary { border-bottom: 1px solid var(--brd); }
+.ach-collapsed .ach-card { border: none; border-radius: 0; margin-bottom: 0; border-bottom: 1px solid var(--brd); }
+.ach-collapsed .ach-card:last-child { border-bottom: none; }
+
 /* ACTIVITY CARD */
 .act-card { border: 1px solid var(--brd); margin-bottom: 11px; background: var(--bg2); }
 .act-hdr { padding: 10px 12px 6px; border-bottom: 1px solid var(--brd); }
@@ -180,7 +190,9 @@ body::after {
 .cmp-btn:hover, .cmp-btn:focus-visible { background: rgba(232,160,96,.18); outline: none; }
 .cmp-btn:active { background: rgba(232,160,96,.28); }
 .cmp-btn:disabled { opacity: .4; cursor: default; }
-.cmp-btn.armed { background: rgba(232,160,96,.32); }
+.cmp-btn.armed { background: rgba(232,160,96,.32); display: flex; flex-direction: column; gap: 2px; }
+.cmp-btn-main { font-size: 15px; letter-spacing: 2px; }
+.cmp-btn-sub { font-size: 12px; letter-spacing: 1px; color: var(--dim); text-transform: none; }
 
 /* INVENTORY */
 .xp-blk { padding: 10px 16px; border-bottom: 1px solid var(--brd); }
@@ -593,10 +605,11 @@ const S = {
   systemsTitle: 'СИСТЕМЫ',
   achToastPrefix: 'ДОСТИЖЕНИЕ',
   achUnlockedOn: 'Получено',
+  achMoreLabel: 'ОСТАЛЬНЫЕ',
   activeDaysMo: 'Активных дней в этом месяце',
-  todaySess: 'Сегодня',
+  todaySess: 'СЕГОДНЯ',
   totalSessLbl: 'Всего',
-  completeBtn: 'ЗАВЕРШИТЬ ВЫЛАЗКУ',
+  completeBtn: 'ВЕРНУЛСЯ С ВЫЛАЗКИ',
   confirmSortiePrefix: 'ПОДТВЕРДИТЬ',
   lootTitle: 'ДОБЫЧА',
   skipAnim: 'ПРОПУСТИТЬ',
@@ -1887,14 +1900,17 @@ function renderSortie(el) {
     const tc = todayCount(a.id);
     const tot = sessCount(a.id);
     const armed = armedActId === a.id;
-    const label = armed ? S.confirmSortiePrefix + ': ' + a.location.toUpperCase() : S.completeBtn;
+    const label = armed
+      ? `<span class="cmp-btn-main">${S.confirmSortiePrefix}: ${a.name.toUpperCase()}</span><span class="cmp-btn-sub">${a.location}</span>`
+      : S.completeBtn;
+    const todayHtml = tc > 0 ? `<span>${S.todaySess} ×<b>${tc}</b></span>` : '';
     html += `<div class="act-card" style="border-color:${a.accent}">
       <div class="act-hdr">
         <div class="act-name" style="color:${a.accent}">${a.name}</div>
         <div class="act-gname">${a.gameName}</div>
       </div>
       <div class="act-meta">
-        <span>${S.todaySess}: <b>${tc}</b></span>
+        ${todayHtml}
         <span>${S.totalSessLbl}: <b>${tot}</b></span>
       </div>
       <button class="cmp-btn${armed?' armed':''}" data-a="complete" data-act="${a.id}">${label}</button>
@@ -2002,32 +2018,50 @@ function renderCalendar(el) {
 }
 
 /* ── ACHIEVEMENTS ────────────────────────────────────────────────────────── */
+/* сверху последние полученные, затем 2-3 ближайшие цели с прогрессом,
+   остальное — свёрнуто (native <details> — no JS needed for the toggle) */
 function renderAchievements(el) {
   const unlocked = DB.achievements.unlocked;
-  const pending = ACHIEVEMENTS.filter(a => !unlocked[a.id]);
-  const done = ACHIEVEMENTS.filter(a => unlocked[a.id])
-    .sort((a, b) => unlocked[b.id].localeCompare(unlocked[a.id]));
 
-  let html = '';
-  pending.forEach(a => {
+  const pendingCardHtml = a => {
     const p = a.progress ? a.progress(DB) : null;
     const progHtml = p
       ? `<div class="prog-bar"><div class="prog-fill" style="width:${Math.round(p.cur/p.max*100)}%"></div></div>
          <div class="prog-txt"><b>${p.cur} / ${p.max}</b></div>`
       : '';
-    html += `<div class="ach-card">
+    return `<div class="ach-card">
       <div class="ach-title">${a.title}</div>
       ${progHtml}
       <div class="ach-desc">${a.desc}</div>
     </div>`;
-  });
-  done.forEach(a => {
-    html += `<div class="ach-card done">
-      <div class="ach-title">${a.title}</div>
-      <div class="ach-date">${S.achUnlockedOn}: ${fmtDate(unlocked[a.id])}</div>
-      <div class="ach-desc">${a.desc}</div>
-    </div>`;
-  });
+  };
+  const doneCardHtml = a => `<div class="ach-card done">
+    <div class="ach-title">${a.title}</div>
+    <div class="ach-date">${S.achUnlockedOn}: ${fmtDate(unlocked[a.id])}</div>
+    <div class="ach-desc">${a.desc}</div>
+  </div>`;
+
+  const doneAll = ACHIEVEMENTS.filter(a => unlocked[a.id])
+    .sort((a, b) => unlocked[b.id].localeCompare(unlocked[a.id]));
+  const recentDone = doneAll.slice(0, 3);
+  const olderDone = doneAll.slice(3);
+
+  const pendingRanked = ACHIEVEMENTS.filter(a => !unlocked[a.id])
+    .map(a => ({ a, ratio: a.progress ? a.progress(DB).cur / a.progress(DB).max : 0 }))
+    .sort((x, y) => y.ratio - x.ratio)
+    .map(x => x.a);
+  const nearest = pendingRanked.slice(0, 3);
+  const restPending = pendingRanked.slice(3);
+
+  let html = recentDone.map(doneCardHtml).join('') + nearest.map(pendingCardHtml).join('');
+
+  const rest = [...restPending, ...olderDone];
+  if (rest.length) {
+    html += `<details class="ach-collapsed">
+      <summary>${S.achMoreLabel} (${rest.length})</summary>
+      ${rest.map(a => unlocked[a.id] ? doneCardHtml(a) : pendingCardHtml(a)).join('')}
+    </details>`;
+  }
 
   el.innerHTML = `<div class="sec">${html}</div>`;
 }
