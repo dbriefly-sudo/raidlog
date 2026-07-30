@@ -406,6 +406,7 @@ body::after {
 .id-rarity { font-size: 14px; letter-spacing: 2px; text-transform: uppercase; margin-top: 3px; }
 .id-rows { font-size: 14px; color: var(--dim); line-height: 2; }
 .id-rows span { color: var(--fg); font-weight: bold; }
+.id-needed { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--brd); font-size: 14px; color: var(--acc); line-height: 1.7; }
 
 /* day detail */
 .dd-sess { border-bottom: 1px solid var(--brd); padding: 8px 0; font-size: 15px; }
@@ -611,6 +612,8 @@ const S = {
   contractsTitle: 'КОНТРАКТЫ',
   contractsNavLabel: 'КОНТРАКТЫ',
   contractsReadyUnit: 'готово к сдаче',
+  openBoardBtn: 'ОТКРЫТЬ ДОСКУ',
+  neededForPrefix: 'Нужно для',
   contractsEmpty: 'Пока нет активных контрактов. Загляните после следующей вылазки.',
   contractSubmitBtn: 'СДАТЬ',
   contractDoneTitle: 'КОНТРАКТ ВЫПОЛНЕН',
@@ -1492,6 +1495,36 @@ function neededForContracts() {
   return s;
 }
 
+/* for the inventory detail modal's "нужно для: <title> (X/Y)" — every active
+   contract that requires this item, with its own aggregate progress */
+function itemsNeededFor(itemId) {
+  return DB.contracts.active
+    .map(inst => {
+      const tpl = contractTemplate(inst.templateId);
+      const req = tpl && tpl.requires.find(r => r.itemId === itemId);
+      if (!req) return null;
+      return { title: tpl.title, have: Math.min(DB.inventory[itemId] || 0, req.qty), qty: req.qty };
+    })
+    .filter(Boolean);
+}
+
+/* the single active contract closest to being ready — by aggregate progress
+   ratio across all of its requirements, not just how many distinct
+   requirements are met (a contract 1 unit away from done outranks one that's
+   fully met on one requirement but has barely started on another) */
+function nearestContract() {
+  if (!DB.contracts.active.length) return null;
+  let best = null, bestRatio = -1;
+  DB.contracts.active.forEach(inst => {
+    const status = requirementStatus(inst.templateId);
+    const totalQty = status.reduce((s, r) => s + r.qty, 0);
+    const haveQty = status.reduce((s, r) => s + Math.min(r.have, r.qty), 0);
+    const ratio = totalQty ? haveQty / totalQty : 0;
+    if (ratio > bestRatio) { bestRatio = ratio; best = inst; }
+  });
+  return best;
+}
+
 function comboTemplatesEligible() {
   if (!isSystemUnlocked('combo_contracts', level())) return [];
   const closedLocations = new Set(
@@ -1810,6 +1843,41 @@ function renderCurrent() {
 }
 
 /* ── SORTIE ──────────────────────────────────────────────────────────────── */
+/* shared by the full board (renderContracts) and the single nearest-contract
+   card on ВЫЛАЗКА (nearestContractCardHtml) — extraFooterHtml lets the sortie
+   card add its own "ОТКРЫТЬ ДОСКУ" button below the submit button */
+function contractCardHtml(inst, extraFooterHtml) {
+  const tpl = contractTemplate(inst.templateId);
+  if (!tpl) return '';
+  const status = requirementStatus(inst.templateId);
+  const ready = status.every(r => r.met);
+  const locLabel = tpl.combo ? tpl.locations.join(' × ') : (tpl.location || S.contractsTitle);
+  const accent = tpl.combo ? 'var(--acc)' : (ACTIVITIES.find(a => a.location === tpl.location)?.accent || 'var(--brd)');
+  const comboTag = tpl.combo ? `<span class="contract-combo-tag">${S.contractComboTag}</span> ` : '';
+  const reqRows = status.map(r => {
+    const item = byId(r.itemId);
+    return `<div class="req-row${r.met ? ' req-met' : ''}">
+      <span class="req-mark">${r.met ? '✓' : '·'}</span>
+      <span class="req-name">${item ? item.name : r.itemId}</span>
+      <b>${r.have} / ${r.qty}</b>
+    </div>`;
+  }).join('');
+  return `<div class="contract-card" style="border-color:${accent}">
+    <div class="contract-title" style="color:${accent}">${comboTag}${tpl.title}</div>
+    <div class="contract-loc">${locLabel}</div>
+    <div class="contract-reqs">${reqRows}</div>
+    <button class="d-btn contract-submit" data-a="contract-submit" data-cid="${inst.id}" ${ready ? '' : 'disabled'}>${S.contractSubmitBtn}</button>
+    ${extraFooterHtml || ''}
+  </div>`;
+}
+
+function nearestContractCardHtml() {
+  if (!isSystemUnlocked('contracts', level())) return '';
+  const inst = nearestContract();
+  if (!inst) return '';
+  return contractCardHtml(inst, `<button class="scr-nav-btn" data-a="open-contracts" style="margin:8px 0 0">${S.openBoardBtn}</button>`);
+}
+
 function renderSortie(el) {
   const now = new Date();
   const adm = activeDays(now.getFullYear(), now.getMonth()+1).size;
@@ -1832,6 +1900,8 @@ function renderSortie(el) {
       <button class="cmp-btn${armed?' armed':''}" data-a="complete" data-act="${a.id}">${label}</button>
     </div>`;
   });
+
+  html += nearestContractCardHtml();
 
   el.innerHTML =
     `<div class="sbar"><span>${S.activeDaysMo}: <b>${adm}</b></span></div>` +
@@ -2047,29 +2117,7 @@ function renderContracts(el) {
     return;
   }
 
-  const cardsHtml = DB.contracts.active.map(inst => {
-    const tpl = contractTemplate(inst.templateId);
-    if (!tpl) return '';
-    const status = requirementStatus(inst.templateId);
-    const ready = status.every(r => r.met);
-    const locLabel = tpl.combo ? tpl.locations.join(' × ') : (tpl.location || S.contractsTitle);
-    const accent = tpl.combo ? 'var(--acc)' : (ACTIVITIES.find(a => a.location === tpl.location)?.accent || 'var(--brd)');
-    const comboTag = tpl.combo ? `<span class="contract-combo-tag">${S.contractComboTag}</span> ` : '';
-    const reqRows = status.map(r => {
-      const item = byId(r.itemId);
-      return `<div class="req-row${r.met ? ' req-met' : ''}">
-        <span class="req-mark">${r.met ? '✓' : '·'}</span>
-        <span class="req-name">${item ? item.name : r.itemId}</span>
-        <b>${r.have} / ${r.qty}</b>
-      </div>`;
-    }).join('');
-    return `<div class="contract-card" style="border-color:${accent}">
-      <div class="contract-title" style="color:${accent}">${comboTag}${tpl.title}</div>
-      <div class="contract-loc">${locLabel}</div>
-      <div class="contract-reqs">${reqRows}</div>
-      <button class="d-btn contract-submit" data-a="contract-submit" data-cid="${inst.id}" ${ready ? '' : 'disabled'}>${S.contractSubmitBtn}</button>
-    </div>`;
-  }).join('');
+  const cardsHtml = DB.contracts.active.map(inst => contractCardHtml(inst)).join('');
 
   el.innerHTML = header + `<div class="sec">${cardsHtml}</div>`;
 }
@@ -2114,6 +2162,11 @@ function showInvDetail(itemId) {
     : `${S.detailDate}: <span>${disc ? fmtLocalDate(disc.firstLocalDate) : '—'}</span><br>
        ${S.detailAct}: <span>${disc ? sourceLabel : '—'}</span>`;
 
+  const needed = item.type === 'material' ? itemsNeededFor(itemId) : [];
+  const neededHtml = needed.length
+    ? `<div class="id-needed">${needed.map(n => `${S.neededForPrefix}: ${n.title} (${n.have}/${n.qty})`).join('<br>')}</div>`
+    : '';
+
   mc.innerHTML = `<div class="ov" id="det-ov">
     <div class="mbox">
       <div class="id-hdr">
@@ -2124,6 +2177,7 @@ function showInvDetail(itemId) {
         </div>
       </div>
       <div class="id-rows">${rows}</div>
+      ${neededHtml}
       <div class="m-btns">
         <button class="m-btn pri" data-a="close-modal">${S.closeBtn}</button>
       </div>
