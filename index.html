@@ -974,7 +974,12 @@ function emptyDB() {
         artifactSlots: [null, null],
       },
     },
-    displaySlots: [null, null],
+    displayedItems: [],   // itemIds actually placed on the showcase — capacity
+                           // (base 1, +1 at level 3, +1 per combo reward
+                           // earned) is computed by displayCapacity(), not
+                           // stored as padding
+    bonusDisplaySlots: 0, // combo-earned capacity only; the base slot and the
+                           // level-3 slot are derived from level(), not stored
     contracts: { active: [], completed: [], lastGeneratedLocalDate: null },
     achievements: { unlocked: {} },
     unlockedSectors: [],
@@ -1094,7 +1099,17 @@ function normalizeDB(d) {
   d.gear.owned = Array.isArray(d.gear.owned) ? d.gear.owned : [];
   d.gear.appearance = Object.assign({}, empty.gear.appearance, d.gear.appearance || {});
   if (!Array.isArray(d.gear.appearance.artifactSlots)) d.gear.appearance.artifactSlots = [null, null];
-  d.displaySlots = Array.isArray(d.displaySlots) ? d.displaySlots : empty.displaySlots;
+  if (Array.isArray(d.displaySlots)) {
+    // old fixed-length [null,null]+combo-push shape -> computed capacity model:
+    // any real (non-null) entries carry over, growth beyond the old base of 2
+    // becomes bonusDisplaySlots (the base slot and the level-3 slot are
+    // derived now, not stored, so only combo-earned growth needs preserving)
+    d.displayedItems = d.displaySlots.filter(x => x != null);
+    d.bonusDisplaySlots = Math.max(0, d.displaySlots.length - 2);
+    delete d.displaySlots;
+  }
+  d.displayedItems = Array.isArray(d.displayedItems) ? d.displayedItems : [];
+  d.bonusDisplaySlots = typeof d.bonusDisplaySlots === 'number' ? d.bonusDisplaySlots : 0;
   d.contracts = (d.contracts && typeof d.contracts === 'object') ? d.contracts : empty.contracts;
   d.contracts.active = Array.isArray(d.contracts.active) ? d.contracts.active : [];
   d.contracts.completed = Array.isArray(d.contracts.completed) ? d.contracts.completed : [];
@@ -1207,6 +1222,12 @@ function totalXP() {
   return sortieXP + contractXP;
 }
 function level() { return levelInfo(totalXP()).level; }
+
+/* base 1 + 1 at level 3 + 1 per combo-earned bonus (max observed today: 3,
+   since there's only one combo template that grants a slot) */
+function displayCapacity() {
+  return 1 + (level() >= 3 ? 1 : 0) + (DB.bonusDisplaySlots || 0);
+}
 
 function sessCount(actId) {
   return actId
@@ -1511,7 +1532,7 @@ function submitContract(activeId) {
 
   const completedId = uid();
   applyDrops(rewardDrops, { actId: sourceActId, dateStr, isoTimestamp: now.toISOString(), kind: 'contract', sourceId: completedId });
-  if (tpl.reward.displaySlot) DB.displaySlots.push(null);
+  if (tpl.reward.displaySlot) DB.bonusDisplaySlots = (DB.bonusDisplaySlots || 0) + 1;
 
   DB.contracts.completed.push({
     id: completedId, templateId: tpl.id, combo: !!tpl.combo,
