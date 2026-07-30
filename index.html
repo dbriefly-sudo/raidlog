@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -64,7 +64,12 @@ body::after {
   z-index: 8999;
 }
 
-#app { display: flex; flex-direction: column; min-height: 100dvh; padding-top: var(--st); }
+/* App shell: #app is exactly one viewport tall; header/tabs are normal flex
+   children (flex-shrink:0) instead of position:sticky with a hand-guessed
+   top offset (#tabs used to hardcode top:60px, assuming the header always
+   renders at exactly 60px — brittle against font/content/safe-area changes).
+   #content is the only scrolling region. */
+#app { display: flex; flex-direction: column; height: 100dvh; padding-top: var(--st); }
 
 /* HEADER */
 #hdr {
@@ -74,9 +79,7 @@ body::after {
   align-items: center;
   justify-content: space-between;
   background: var(--bg);
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  flex-shrink: 0;
 }
 #hdr h1 { font-size: 18px; letter-spacing: 5px; color: var(--acc); font-weight: normal; }
 #hdr-right { display: flex; align-items: center; gap: 10px; }
@@ -87,7 +90,7 @@ body::after {
 .hdr-prog-fill { height: 100%; background: var(--acc); transition: width .3s; }
 #hdr-gear {
   flex-shrink: 0;
-  width: 32px; height: 32px;
+  width: 44px; height: 44px;
   display: flex; align-items: center; justify-content: center;
   background: none; border: 1px solid var(--brd);
   color: var(--dim); font-size: 17px;
@@ -100,14 +103,13 @@ body::after {
   display: flex;
   border-bottom: 1px solid var(--brd);
   background: var(--bg);
-  position: sticky;
-  top: 60px;
-  z-index: 99;
   flex-shrink: 0;
 }
 .t-btn {
   flex: 1;
+  min-height: 44px;
   padding: 9px 1px;
+  display: flex; align-items: center; justify-content: center;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
@@ -122,7 +124,7 @@ body::after {
 .t-btn.on { color: var(--acc); border-bottom-color: var(--acc); }
 .t-btn:focus-visible { outline: 1px solid var(--acc); outline-offset: -1px; }
 
-/* CONTENT */
+/* CONTENT — the only scrolling region now that header/tabs aren't sticky */
 #content { flex: 1; overflow-y: auto; padding-bottom: calc(16px + var(--sb)); }
 
 /* STAT BAR */
@@ -278,7 +280,8 @@ body::after {
 }
 .cal-dh { text-align: center; font-size: 14px; color: var(--dim); padding: 4px 0; }
 .cal-d {
-  text-align: center; padding: 8px 0;
+  min-height: 44px;
+  display: flex; align-items: center; justify-content: center;
   font-size: 15px; color: var(--dim);
   cursor: pointer; border: 1px solid transparent;
 }
@@ -434,6 +437,7 @@ body::after {
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   padding: 16px; gap: 20px;
+  overflow-y: auto;
 }
 .loot-title { font-size: 14px; letter-spacing: 5px; color: var(--dim); text-transform: uppercase; }
 .loot-cards { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
@@ -490,6 +494,18 @@ body::after {
 .loot-card[data-r="rare"]      .lc-rarity { color: var(--r-rare); }
 .loot-card[data-r="very_rare"] .lc-rarity { color: var(--r-very_rare); }
 .loot-card[data-r="legendary"] .lc-rarity { color: var(--r-legendary); }
+
+/* At a 390px-class viewport, 3 full-size (128px) cards + gaps don't fit one
+   row (128*3 + 20 = 404px > ~358px usable), so they'd wrap to 2+1 — fine
+   during the staggered reveal (still centered), but the settled result reads
+   as a receipt, not a hand of cards, so it's deliberately kept to one
+   compact row instead of leaving the wrap to chance. */
+@media (max-width: 400px) {
+  .loot-card { width: 104px; height: 142px; padding: 8px; }
+  .lc-icon { width: 42px; height: 42px; font-size: 22px; margin-bottom: 6px; }
+  .lc-name { font-size: 12px; }
+  .lc-rarity { font-size: 11px; }
+}
 
 /* achievement toast queue */
 .ach-queue { display: flex; flex-direction: column; gap: 8px; align-items: center; }
