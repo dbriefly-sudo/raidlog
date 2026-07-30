@@ -1189,11 +1189,13 @@ const byId = id => ITEMS.find(i => i.id === id);
 const byAct = id => ACTIVITIES.find(a => a.id === id);
 
 /* ── COMPUTED ────────────────────────────────────────────────────────────── */
-/* XP is never stored as a total — always recomputed from sessions (10 each)
-   and contracts.completed (15 regular / 25 combo). Nothing else grants XP. */
+/* XP is never stored as a running total — always summed from the per-record
+   snapshots: session.xpAwarded and contract.xpAwarded (both already written
+   at creation time). Falls back to 10/15/25 for older records that predate
+   the field existing on that record type. Nothing else grants XP. */
 function totalXP() {
-  const sortieXP = DB.sessions.length * 10;
-  const contractXP = DB.contracts.completed.reduce((sum, c) => sum + (c.combo ? 25 : 15), 0);
+  const sortieXP = DB.sessions.reduce((sum, s) => sum + (s.xpAwarded != null ? s.xpAwarded : 10), 0);
+  const contractXP = DB.contracts.completed.reduce((sum, c) => sum + (c.xpAwarded != null ? c.xpAwarded : (c.combo ? 25 : 15)), 0);
   return sortieXP + contractXP;
 }
 function level() { return levelInfo(totalXP()).level; }
@@ -1227,15 +1229,26 @@ function monthSessions(year, month) {
   });
 }
 
+function monthContractsCompleted(year, month) {
+  return DB.contracts.completed.filter(c => {
+    if (!c.localDate) return false;
+    const [y, m] = c.localDate.split('-').map(Number);
+    return y === year && m === month;
+  });
+}
+
 function monthSummary(year, month) {
   const sess = monthSessions(year, month);
+  const contracts = monthContractsCompleted(year, month);
   const byAct = {};
   ACTIVITIES.forEach(a => { byAct[a.id] = 0; });
   sess.forEach(s => { byAct[s.activityId] = (byAct[s.activityId]||0) + 1; });
+  const sortieXp = sess.reduce((s, x) => s + (x.xpAwarded != null ? x.xpAwarded : 10), 0);
+  const contractXp = contracts.reduce((s, c) => s + (c.xpAwarded != null ? c.xpAwarded : (c.combo ? 25 : 15)), 0);
   return {
     activeDays: new Set(sess.map(s => s.localDate)).size,
     sorties: sess.length,
-    xp: sess.reduce((s, x) => s + (x.xpAwarded||0), 0),
+    xp: sortieXp + contractXp,
     byAct,
   };
 }
@@ -1483,7 +1496,12 @@ function submitContract(activeId) {
 
   DB.contracts.completed.push({
     id: completedId, templateId: tpl.id, combo: !!tpl.combo,
-    location: tpl.location || null, completedAt: now.toISOString(), localDate: dateStr,
+    location: tpl.location || null,
+    completedAt: now.toISOString(), localDate: dateStr,
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    consumedItems: tpl.requires.map(r => ({ itemId: r.itemId, qty: r.qty })),
+    grantedItems: rewardDrops.map(d => d.itemId),
+    xpAwarded: tpl.combo ? 25 : 15,
   });
   DB.contracts.active = DB.contracts.active.filter(c => c.id !== activeId);
 
