@@ -617,6 +617,7 @@ const S = {
   contractComboTag: 'КОМБО',
   detailCnt: 'Количество',
   detailDate: 'Дата находки',
+  detailFirstFound: 'Первая находка',
   detailAct: 'Активность',
   detailRarity: 'Редкость',
   closeBtn: 'ЗАКРЫТЬ',
@@ -961,7 +962,7 @@ const DEV_UNGATE_KEY = 'raidlog_dev_ungate_v1';
 
 function emptyDB() {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     sessions: [],
     inventory: {},
     discoveries: {},
@@ -985,10 +986,12 @@ function emptyDB() {
   };
 }
 
-/* v1 sessions are the only history we have; rebuild inventory/discoveries/gear
-   from their drops so nothing found before the schema change is lost. Item ids
-   from v1 all still resolve in ITEMS (v3 only adds items, never removes), so a
-   plain lookup is enough — no id remapping table needed. */
+/* v1 sessions are the only history we have; rebuild inventory/gear from their
+   drops so nothing found before the schema change is lost (discoveries gets
+   rebuilt properly by upgradeDiscoveriesToV3 right after this, so a rough
+   shape here is fine). Item ids from v1 all still resolve in ITEMS (later
+   versions only add items, never remove), so a plain lookup is enough — no id
+   remapping table needed. */
 function migrateV1toV2(old) {
   const db = emptyDB();
   db.sessions = Array.isArray(old.sessions) ? old.sessions : [];
@@ -998,9 +1001,8 @@ function migrateV1toV2(old) {
       if (!item) return;
       if (item.type === 'material') {
         db.inventory[item.id] = (db.inventory[item.id] || 0) + 1;
-      } else {
-        if (!db.discoveries[item.id]) db.discoveries[item.id] = { date: sess.localDate, source: sess.activityId };
-        if (item.type === 'gear' && !db.gear.owned.includes(item.id)) db.gear.owned.push(item.id);
+      } else if (item.type === 'gear' && !db.gear.owned.includes(item.id)) {
+        db.gear.owned.push(item.id);
       }
     });
   });
@@ -1010,11 +1012,81 @@ function migrateV1toV2(old) {
   return db;
 }
 
-/* fills in any keys a saved/imported v2 DB is missing — covers partial saves
+/* v2 discoveries were {date, source} or {date, source, firstSource:{kind,
+   activityId}} depending on how old the save is; v3 is richer (firstFoundAt +
+   firstLocalDate instead of one ambiguous date, firstSource.id, totalFound)
+   and now exists for materials too — inventory stays the current stock,
+   discoveries becomes the historical record, and those answer genuinely
+   different questions (a contract can spend material stock down to zero
+   without erasing the fact it was once found).
+   Rather than translate the old shape field-by-field, this replays every
+   known source of drops — sessions, contract rewards (via looked-up
+   template, since old completed-contract records didn't store grantedItems
+   yet), dev grants — in chronological order and rebuilds discoveries from
+   scratch. That's also what naturally fixes stamped_bearing/registrar_seal/
+   catalog_card: they were type:collectible (discoveries-only) before the
+   previous commit reclassified them to type:material; any copy already
+   found under the old type is backfilled into inventory here too, since
+   nothing could have consumed them yet — no template ever required them. */
+function upgradeDiscoveriesToV3(db) {
+  const events = [];
+
+  db.sessions.forEach(sess => {
+    (sess.drops || []).forEach(d => {
+      events.push({
+        itemId: d.itemId, at: sess.completedAt, localDate: sess.localDate,
+        kind: sess.source === 'dev' ? 'dev' : 'sortie', id: sess.id, activityId: sess.activityId,
+      });
+    });
+  });
+
+  (db.contracts.completed || []).forEach(c => {
+    const tpl = CONTRACT_TEMPLATES.find(t => t.id === c.templateId);
+    const granted = Array.isArray(c.grantedItems) ? c.grantedItems
+      : (tpl ? (tpl.reward.items || []).flatMap(ri => Array(ri.qty).fill(ri.itemId)) : []);
+    const at = c.completedAt || new Date().toISOString();
+    granted.forEach(itemId => {
+      events.push({ itemId, at, localDate: c.localDate || localDate(new Date(at)), kind: 'contract', id: c.id, activityId: undefined });
+    });
+  });
+
+  (db.devGrants || []).forEach(g => {
+    const at = g.at || new Date().toISOString();
+    events.push({ itemId: g.itemId, at, localDate: localDate(new Date(at)), kind: 'dev', id: null, activityId: undefined });
+  });
+
+  events.sort((a, b) => (a.at || '').localeCompare(b.at || ''));
+
+  db.discoveries = {};
+  events.forEach(ev => {
+    const item = ITEMS.find(i => i.id === ev.itemId);
+    if (!item) return;
+    let disc = db.discoveries[ev.itemId];
+    if (!disc) {
+      disc = db.discoveries[ev.itemId] = {
+        firstFoundAt: ev.at || new Date().toISOString(),
+        firstLocalDate: ev.localDate || localDate(),
+        firstSource: { kind: ev.kind, id: ev.id, activityId: ev.activityId },
+        totalFound: 0,
+      };
+    }
+    if (!item.unique || disc.totalFound === 0) disc.totalFound += 1;
+  });
+
+  const RECLASSIFIED_TO_MATERIAL = ['stamped_bearing', 'registrar_seal', 'catalog_card'];
+  RECLASSIFIED_TO_MATERIAL.forEach(id => {
+    const disc = db.discoveries[id];
+    if (disc && disc.totalFound > 0 && !(db.inventory[id] > 0)) db.inventory[id] = disc.totalFound;
+  });
+
+  return db;
+}
+
+/* fills in any keys a saved/imported v3 DB is missing — covers partial saves
    from earlier in development and keeps future additive schema tweaks safe */
 function normalizeDB(d) {
   const empty = emptyDB();
-  d.schemaVersion = 2;
+  d.schemaVersion = 3;
   d.sessions = Array.isArray(d.sessions) ? d.sessions : [];
   d.inventory = (d.inventory && typeof d.inventory === 'object') ? d.inventory : {};
   d.discoveries = (d.discoveries && typeof d.discoveries === 'object') ? d.discoveries : {};
@@ -1035,19 +1107,22 @@ function normalizeDB(d) {
   return d;
 }
 
-/* accepts a parsed v1 or v2 save (used by both load() and file import) and
-   always returns a normalized v2 DB */
-function coerceToV2(raw) {
+/* accepts a parsed v1/v2/v3 save (used by both load() and file import) and
+   always returns a normalized v3 DB. The discoveries rebuild only ever runs
+   as part of the v1/v2 -> v3 transition, once — ongoing play maintains
+   discoveries incrementally via applyDrops(), it's not replayed on every load. */
+function coerceToV3(raw) {
   if (!raw || !Array.isArray(raw.sessions)) return null;
-  if (raw.schemaVersion === 2) return normalizeDB(raw);
-  if (raw.schemaVersion === 1) return normalizeDB(migrateV1toV2(raw));
+  if (raw.schemaVersion === 3) return normalizeDB(raw);
+  if (raw.schemaVersion === 2) return normalizeDB(upgradeDiscoveriesToV3(raw));
+  if (raw.schemaVersion === 1) return normalizeDB(upgradeDiscoveriesToV3(migrateV1toV2(raw)));
   return null;
 }
 
 function load() {
   let raw;
   try { raw = JSON.parse(localStorage.getItem(KEY)); } catch(_) { raw = null; }
-  return coerceToV2(raw) || emptyDB();
+  return coerceToV3(raw) || emptyDB();
 }
 
 function save() { localStorage.setItem(KEY, JSON.stringify(DB)); }
@@ -1098,6 +1173,16 @@ function fmtTime(iso) {
 
 function fmtDate(iso) {
   return new Date(iso).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'});
+}
+
+/* for bare 'YYYY-MM-DD' strings (session.localDate, discoveries.firstLocalDate,
+   contract.localDate) — never new Date(str) on one of these: a date-only ISO
+   string parses as UTC midnight, so formatting it back via a positive-offset
+   local timezone is fine but any negative-offset viewer sees the previous day.
+   Parsing the components directly sidesteps that entirely. */
+function fmtLocalDate(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return String(d).padStart(2, '0') + '.' + String(m).padStart(2, '0') + '.' + y;
 }
 
 const byId = id => ITEMS.find(i => i.id === id);
@@ -1281,23 +1366,32 @@ function rollLootV2(actId) {
 }
 
 /* ── ACTIONS ─────────────────────────────────────────────────────────────── */
-/* kind classifies how a discovery was first made ('loot'/'contract'/'dev') —
-   only informational (shown in the item detail modal), doesn't affect
-   mechanics. Guarded against overwriting an existing discoveries entry so
-   firstSource stays true to its name if applyDrops is ever called twice for
-   the same non-repeatable item (e.g. the dev grant tool bypasses the normal
-   no-redrop check on purpose). */
-function applyDrops(drops, actId, dateStr, kind) {
-  kind = kind || 'loot';
+/* discoveries now exists for every type, not just non-material ones —
+   inventory is current stock, discoveries is the historical record (first
+   found + lifetime total), and a contract spending material stock to zero
+   doesn't erase the fact it was found. ctx: { actId, dateStr, isoTimestamp,
+   kind: 'sortie'|'contract'|'dev', sourceId }. totalFound is guarded for
+   unique items so a repeat call (the dev grant tool bypasses the normal
+   no-redrop check on purpose) can't inflate it past 1 or overwrite
+   firstSource — a non-unique (contract_part material) always increments. */
+function applyDrops(drops, ctx) {
   drops.forEach(d => {
     const item = byId(d.itemId);
     if (!item) return;
     if (item.type === 'material') {
       DB.inventory[item.id] = (DB.inventory[item.id] || 0) + 1;
-    } else {
-      if (!DB.discoveries[item.id]) DB.discoveries[item.id] = { date: dateStr, source: actId, firstSource: { kind, activityId: actId } };
-      if (item.type === 'gear' && !DB.gear.owned.includes(item.id)) DB.gear.owned.push(item.id);
     }
+    let disc = DB.discoveries[item.id];
+    if (!disc) {
+      disc = DB.discoveries[item.id] = {
+        firstFoundAt: ctx.isoTimestamp,
+        firstLocalDate: ctx.dateStr,
+        firstSource: { kind: ctx.kind, id: ctx.sourceId || null, activityId: ctx.actId || undefined },
+        totalFound: 0,
+      };
+    }
+    if (!item.unique || disc.totalFound === 0) disc.totalFound += 1;
+    if (item.type === 'gear' && !DB.gear.owned.includes(item.id)) DB.gear.owned.push(item.id);
   });
 }
 
@@ -1377,15 +1471,19 @@ function submitContract(activeId) {
     if (next > 0) DB.inventory[r.itemId] = next; else delete DB.inventory[r.itemId];
   });
 
-  const sourceActId = tpl.location ? (ACTIVITIES.find(a => a.location === tpl.location)?.id || 'contract') : 'contract';
+  const now = new Date();
+  const dateStr = localDate(now);
+  const sourceActId = tpl.location ? ACTIVITIES.find(a => a.location === tpl.location)?.id : undefined;
   const rewardDrops = [];
   (tpl.reward.items || []).forEach(ri => { for (let k = 0; k < ri.qty; k++) rewardDrops.push({ itemId: ri.itemId }); });
-  applyDrops(rewardDrops, sourceActId, localDate(), 'contract');
+
+  const completedId = uid();
+  applyDrops(rewardDrops, { actId: sourceActId, dateStr, isoTimestamp: now.toISOString(), kind: 'contract', sourceId: completedId });
   if (tpl.reward.displaySlot) DB.displaySlots.push(null);
 
   DB.contracts.completed.push({
-    id: uid(), templateId: tpl.id, combo: !!tpl.combo,
-    location: tpl.location || null, completedAt: new Date().toISOString(),
+    id: completedId, templateId: tpl.id, combo: !!tpl.combo,
+    location: tpl.location || null, completedAt: now.toISOString(), localDate: dateStr,
   });
   DB.contracts.active = DB.contracts.active.filter(c => c.id !== activeId);
 
@@ -1402,7 +1500,6 @@ function completeSortie(actId, opts) {
   const now = opts.date || new Date();
   const dateStr = localDate(now);
   const drops = rollLootV2(actId);
-  applyDrops(drops, actId, dateStr, opts.source === 'dev' ? 'dev' : 'loot');
 
   const sess = {
     id: uid(),
@@ -1414,6 +1511,9 @@ function completeSortie(actId, opts) {
     drops,
   };
   if (opts.source) sess.source = opts.source;
+
+  applyDrops(drops, { actId, dateStr, isoTimestamp: sess.completedAt, kind: opts.source === 'dev' ? 'dev' : 'sortie', sourceId: sess.id });
+
   DB.sessions.push(sess);
 
   if (!opts.date && DB.contracts.lastGeneratedLocalDate !== dateStr) generateContracts(dateStr);
@@ -1474,8 +1574,9 @@ function grantItemDev(itemId) {
   if (!devMode) return false;
   const item = byId(itemId);
   if (!item) return false;
-  applyDrops([{ itemId }], 'dev', localDate(), 'dev');
-  DB.devGrants.push({ itemId });
+  const now = new Date();
+  applyDrops([{ itemId }], { dateStr: localDate(now), isoTimestamp: now.toISOString(), kind: 'dev', sourceId: null });
+  DB.devGrants.push({ itemId, at: now.toISOString() });
   checkNewAchievements();
   save();
   return true;
@@ -1913,17 +2014,17 @@ function showInvDetail(itemId) {
   const item = byId(itemId);
   if (!item) return;
 
+  const disc = DB.discoveries[itemId];
+  const kind = disc && disc.firstSource && disc.firstSource.kind;
+  const sourceLabel = kind === 'dev' ? S.sourceDev
+    : kind === 'contract' ? S.sourceContract
+    : (disc && byAct(disc.firstSource.activityId)?.name) || '—';
+
   const rows = item.type === 'material'
-    ? `${S.detailCnt}: <span>${DB.inventory[itemId] || 0}</span>`
-    : (() => {
-        const disc = DB.discoveries[itemId];
-        const kind = disc && disc.firstSource && disc.firstSource.kind;
-        const sourceLabel = kind === 'dev' ? S.sourceDev
-          : kind === 'contract' ? S.sourceContract
-          : (disc && byAct(disc.source)?.name) || '—';
-        return `${S.detailDate}: <span>${disc ? fmtDate(disc.date) : '—'}</span><br>
-        ${S.detailAct}: <span>${disc ? sourceLabel : '—'}</span>`;
-      })();
+    ? `${S.detailCnt}: <span>${DB.inventory[itemId] || 0}</span><br>
+       ${S.detailFirstFound}: <span>${disc ? fmtLocalDate(disc.firstLocalDate) : '—'}</span>`
+    : `${S.detailDate}: <span>${disc ? fmtLocalDate(disc.firstLocalDate) : '—'}</span><br>
+       ${S.detailAct}: <span>${disc ? sourceLabel : '—'}</span>`;
 
   mc.innerHTML = `<div class="ov" id="det-ov">
     <div class="mbox">
@@ -2236,7 +2337,7 @@ document.addEventListener('click', async e => {
         r.onload = ev => {
           try {
             const parsed = JSON.parse(ev.target.result);
-            const coerced = coerceToV2(parsed);
+            const coerced = coerceToV3(parsed);
             if (coerced) { DB = coerced; save(); render(); }
           } catch(_) {}
         };
