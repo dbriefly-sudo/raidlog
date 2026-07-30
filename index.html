@@ -343,6 +343,16 @@ body::after {
 .d-btn.dng { color: #e05a5a; border-color: #4a2020; }
 .d-btn.dng:hover { border-color: #e05a5a; }
 .d-info { margin-top: 16px; padding: 12px; border: 1px solid var(--brd); font-size: 14px; color: var(--dim); line-height: 1.7; }
+.app-version {
+  margin-top: 24px; padding-top: 12px;
+  border-top: 1px solid var(--brd);
+  text-align: center;
+  font-size: 12px; letter-spacing: 1px;
+  color: var(--dim);
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
+}
 
 /* MODAL */
 .ov {
@@ -617,6 +627,7 @@ const S = {
   cancelBtn: 'ОТМЕНА',
   confirmBtn: 'ПОДТВЕРДИТЬ',
   dataInfo: 'Прогресс хранится только в этом браузере. Для переноса на другое устройство используйте экспорт.',
+  devTag: 'DEV',
   months: ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'],
   weekdays: ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'],
   rarities: { common:'обычный', uncommon:'необычный', rare:'редкий', very_rare:'очень редкий', legendary:'легендарный' },
@@ -819,6 +830,8 @@ const CONTRACT_TEMPLATES = [
 
 /* ── STORAGE ─────────────────────────────────────────────────────────────── */
 const KEY = 'raidlog_v1';
+const APP_VERSION = '0.9.0';
+const DEV_MODE_KEY = 'raidlog_devmode_v1';
 
 function emptyDB() {
   return {
@@ -1282,6 +1295,24 @@ let armedActId = null;   // activity whose button is armed, awaiting the confirm
 let armedTimer = null;
 let calY = new Date().getFullYear();
 let calM = new Date().getMonth() + 1;
+let devMode = localStorage.getItem(DEV_MODE_KEY) === '1';
+let versionTapCount = 0;
+let versionTapTimer = null;
+
+function tapVersion() {
+  versionTapCount++;
+  if (versionTapTimer) clearTimeout(versionTapTimer);
+  versionTapTimer = setTimeout(() => { versionTapCount = 0; }, 2000);
+  if (versionTapCount < 5) return;
+  versionTapCount = 0;
+  clearTimeout(versionTapTimer);
+  devMode = !devMode;
+  try {
+    if (devMode) localStorage.setItem(DEV_MODE_KEY, '1');
+    else localStorage.removeItem(DEV_MODE_KEY);
+  } catch(_) {}
+  renderCurrent();
+}
 
 function openScreen(name) {
   tabStack.push(tab);
@@ -1518,6 +1549,7 @@ function renderSystem(el) {
       <button class="d-btn" data-a="export-html">${S.exportHtmlBtn}</button>
       <button class="d-btn dng" data-a="reset">${S.resetBtn}</button>
       <div class="d-info">${S.dataInfo}</div>
+      <div class="app-version" data-a="version-tap">RAIDLOG v${APP_VERSION}${devMode ? ' · ' + S.devTag : ''}</div>
     </div>`;
 }
 
@@ -1842,6 +1874,7 @@ document.addEventListener('click', async e => {
     case 'close-system':   closeScreen();            break;
     case 'open-contracts': openScreen('contracts');  break;
     case 'close-contracts': closeScreen();           break;
+    case 'version-tap':    tapVersion();              break;
 
     case 'complete': {
       if (sortieBusy) return;
