@@ -28,6 +28,8 @@
   --font: 'Courier New', Courier, monospace;
   --st: env(safe-area-inset-top, 0px);
   --sb: env(safe-area-inset-bottom, 0px);
+  --sl: env(safe-area-inset-left, 0px);
+  --sr: env(safe-area-inset-right, 0px);
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
@@ -69,7 +71,7 @@ body::after {
    top offset (#tabs used to hardcode top:60px, assuming the header always
    renders at exactly 60px — brittle against font/content/safe-area changes).
    #content is the only scrolling region. */
-#app { display: flex; flex-direction: column; height: 100dvh; padding-top: var(--st); }
+#app { display: flex; flex-direction: column; height: 100dvh; padding-top: var(--st); padding-left: var(--sl); padding-right: var(--sr); }
 
 /* HEADER */
 #hdr {
@@ -244,6 +246,9 @@ body::after {
 
 .i-cnt { position: absolute; top: 5px; right: 7px; font-size: 14px; color: var(--fg); font-weight: bold; }
 .i-name { font-size: 14px; color: var(--dim); line-height: 1.3; }
+/* rarity is also carried by the border/glyph colour; this text keeps it
+   readable when colour alone isn't available to the reader */
+.i-rar { font-size: 10px; letter-spacing: .5px; text-transform: uppercase; color: var(--dim); margin-top: 3px; }
 .inv-empty { padding: 32px 16px; text-align: center; color: var(--dim); font-size: 14px; }
 .inv-item.needed { border-color: var(--acc); }
 .i-need { position: absolute; bottom: 5px; left: 6px; font-size: 10px; letter-spacing: .5px; color: var(--acc); text-transform: uppercase; }
@@ -267,6 +272,8 @@ body::after {
   padding: 10px 16px; border-bottom: 1px solid var(--brd);
 }
 .cal-nav-btn {
+  min-width: 44px; min-height: 44px;
+  display: inline-flex; align-items: center; justify-content: center;
   background: none; border: 1px solid var(--brd);
   color: var(--dim); font-family: var(--font);
   font-size: 15px; padding: 3px 10px; cursor: pointer;
@@ -310,6 +317,8 @@ body::after {
   padding: 10px 16px; border-bottom: 1px solid var(--brd);
 }
 .scr-back {
+  min-width: 44px; min-height: 44px;
+  display: inline-flex; align-items: center; justify-content: center;
   background: none; border: 1px solid var(--brd);
   color: var(--dim); font-family: var(--font);
   font-size: 15px; padding: 3px 10px; cursor: pointer;
@@ -335,6 +344,58 @@ body::after {
 .req-mark { width: 14px; text-align: center; }
 .contract-submit { margin-bottom: 0; }
 
+/* DEEP SECTOR на карточке активности */
+.cmp-btn.deep { margin-top: 8px; background: rgba(168,136,207,.10); border-color: var(--r-very_rare); color: var(--r-very_rare); }
+.cmp-btn.deep:hover, .cmp-btn.deep:focus-visible { background: rgba(168,136,207,.20); }
+.cmp-btn.deep.armed { background: rgba(168,136,207,.32); }
+.sector-lock {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; min-height: 44px;
+  margin-top: 8px; padding: 8px 12px;
+  background: none; border: 1px dashed var(--brd);
+  color: var(--dim); font-family: var(--font);
+  font-size: 13px; letter-spacing: 1px; text-align: left;
+  cursor: pointer;
+}
+.sector-lock:hover, .sector-lock:focus-visible { border-color: var(--dim); outline: none; }
+.sector-lock-glyph { flex-shrink: 0; }
+.sector-lock-name { flex: 1; text-transform: uppercase; }
+.sector-lock-state { flex-shrink: 0; font-size: 11px; letter-spacing: 1px; }
+
+/* GEAR — терминальный формуляр агента, без графики */
+.gear-class { border: 1px solid var(--brd); background: var(--bg2); padding: 10px 12px; margin-bottom: 12px; }
+.gear-class-lbl { font-size: 14px; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; }
+.gear-class-val { font-size: 28px; color: var(--acc); font-weight: bold; line-height: 1.2; }
+.gear-class-hint { font-size: 13px; color: var(--dim); line-height: 1.5; margin-top: 4px; }
+.gear-row {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; min-height: 52px;
+  padding: 8px 12px; margin-bottom: 8px;
+  background: var(--bg2); border: 1px solid var(--brd);
+  color: var(--fg); font-family: var(--font); font-size: 14px;
+  text-align: left; cursor: pointer;
+}
+.gear-row:hover, .gear-row:focus-visible { border-color: var(--dim); outline: none; }
+.gear-row:disabled { opacity: .4; cursor: default; }
+.gear-row:disabled:hover { border-color: var(--brd); }
+.gear-slot { flex-shrink: 0; width: 92px; color: var(--dim); letter-spacing: 1px; text-transform: uppercase; font-size: 13px; }
+.gear-mark { flex-shrink: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; color: #111; }
+.gear-val { flex: 1; line-height: 1.3; }
+.gear-val.empty { color: var(--dim); }
+.gear-w { flex-shrink: 0; font-size: 12px; color: var(--dim); letter-spacing: 1px; }
+.gear-belt-sub { font-size: 14px; color: var(--dim); letter-spacing: 1px; text-transform: uppercase; padding: 14px 0 8px; }
+.gear-pick-item {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; min-height: 44px;
+  padding: 8px 10px; margin-bottom: 6px;
+  background: var(--bg2); border: 1px solid var(--brd);
+  color: var(--fg); font-family: var(--font); font-size: 14px;
+  text-align: left; cursor: pointer;
+}
+.gear-pick-item:hover, .gear-pick-item:focus-visible { border-color: var(--dim); outline: none; }
+.gear-pick-item.on { border-color: var(--acc); }
+.gear-pick-on-mark { flex-shrink: 0; color: var(--acc); }
+
 /* SYSTEMS (level-gated feature status) */
 .sys-list { margin-bottom: 18px; }
 .sys-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; font-size: 14px; border-bottom: 1px solid var(--brd); }
@@ -355,6 +416,11 @@ body::after {
   cursor: pointer; text-align: left; text-transform: uppercase;
 }
 .d-btn:hover, .d-btn:focus-visible { border-color: var(--dim); outline: none; }
+/* mirrors .cmp-btn:disabled — without this a contract that isn't ready looks
+   and hovers exactly like one that is, and the click just silently does
+   nothing */
+.d-btn:disabled { opacity: .4; cursor: default; }
+.d-btn:disabled:hover { border-color: var(--brd); }
 .d-btn.dng { color: #e05a5a; border-color: #4a2020; }
 .d-btn.dng:hover { border-color: #e05a5a; }
 .d-info { margin-top: 16px; padding: 12px; border: 1px solid var(--brd); font-size: 14px; color: var(--dim); line-height: 1.7; }
@@ -435,9 +501,15 @@ body::after {
   background: rgba(0,0,0,.93);
   z-index: 600;
   display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
+  align-items: center;
+  /* центрируем, пока содержимое помещается; когда квитанция и плашки ачивок
+     делают его выше экрана, обычный center обрезал бы ВЕРХ так, что до него
+     нельзя доскроллить. safe center в этом случае прижимает к началу. */
+  justify-content: center;
+  justify-content: safe center;
   padding: 16px; gap: 20px;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .loot-title { font-size: 14px; letter-spacing: 5px; color: var(--dim); text-transform: uppercase; }
 .loot-cards { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
@@ -501,10 +573,34 @@ body::after {
    as a receipt, not a hand of cards, so it's deliberately kept to one
    compact row instead of leaving the wrap to chance. */
 @media (max-width: 400px) {
+  /* 104*3 + 10*2 = 332 still didn't fit a 360px screen (328 usable), so the
+     wrap this block exists to prevent came back below ~364px; trimming the
+     overlay padding and the gap buys the row back down to 328 needed. */
+  .loot-ov { padding: 12px; }
+  .loot-cards { gap: 8px; }
   .loot-card { width: 104px; height: 142px; padding: 8px; }
   .lc-icon { width: 42px; height: 42px; font-size: 22px; margin-bottom: 6px; }
   .lc-name { font-size: 12px; }
   .lc-rarity { font-size: 11px; }
+}
+
+.lc-need { font-size: 10px; letter-spacing: .3px; color: var(--acc); line-height: 1.25; margin-top: 4px; }
+
+/* КВИТАНЦИЯ — отчёт после карточек, а не вместо них */
+.receipt {
+  width: 100%; max-width: 340px;
+  border: 1px solid var(--brd); background: var(--bg2);
+  padding: 12px 14px;
+}
+.rc-title { font-size: 13px; letter-spacing: 3px; color: var(--dim); text-transform: uppercase; margin-bottom: 8px; }
+.rc-row { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; color: var(--dim); padding: 3px 0; }
+.rc-row b { color: var(--fg); font-weight: bold; text-align: right; }
+.rc-row.rc-none { color: var(--dim); font-size: 13px; }
+.rc-row.rc-beacon { color: var(--acc); display: block; line-height: 1.4; }
+.rc-sub { font-size: 12px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; margin: 10px 0 2px; border-top: 1px solid var(--brd); padding-top: 8px; }
+.rc-flash {
+  font-size: 13px; letter-spacing: 2px; color: var(--acc); text-transform: uppercase;
+  border: 1px solid var(--acc); padding: 6px 8px; margin-bottom: 8px; text-align: center;
 }
 
 /* achievement toast queue */
@@ -607,6 +703,7 @@ body::after {
     <div id="tab-achievements" hidden></div>
     <div id="tab-system" hidden></div>
     <div id="tab-contracts" hidden></div>
+    <div id="tab-gear" hidden></div>
   </div>
 </div>
 <div id="mc"></div>
@@ -627,7 +724,41 @@ const S = {
   totalSessLbl: 'Всего',
   completeBtn: 'ВЕРНУЛСЯ С ВЫЛАЗКИ',
   confirmSortiePrefix: 'ПОДТВЕРДИТЬ',
+  // всё, что относится к сектору, пишется в ПРОШЕДШЕМ времени: выбор
+  // описывает уже случившееся, а не планируемое. Будущее время здесь
+  // незаметно превращает механику в планирование до занятия
+  sectorReturnPrefix: 'ВЕРНУЛСЯ',
+  sectorNeedPass: 'НУЖЕН ПУТЕВОЙ ЛИСТ',
+  sectorLocked: 'СЕКТОР ЗАКРЫТ',
+  sectorConditions: 'УСЛОВИЯ ДОСТУПА',
+  sectorManifest: 'ЧТО ТАМ ВОДИТСЯ',
+  sectorManifestFound: 'найдено',
+  // на подтверждении — отглагольное существительное без времени: «израсходован»
+  // там врёт (ещё не списан), а будущее время в подписях к сектору запрещено
+  sectorPassCost: 'СПИСАНИЕ ПУТЕВОГО ЛИСТА',
+  sectorPassSpent: 'ПУТЕВОЙ ЛИСТ ИЗРАСХОДОВАН',
+  sectorUnidentified: 'НЕ ОПОЗНАНО',
+  sectorBaseAlways: 'Базовый сектор локации открыт всегда и награждает так же.',
+  condLevel: 'Уровень',
+  condClass: 'Класс оснащения',
+  condSlots: 'Слотов найдено',
   lootTitle: 'ДОБЫЧА',
+  // квитанция: факт -> лут -> ВЛИЯНИЕ -> СЛЕДУЮЩИЙ ОРИЕНТИР
+  receiptTitle: 'КВИТАНЦИЯ',
+  receiptSortieNo: 'ВЫЛАЗКА №',
+  receiptSector: 'Сектор',
+  receiptXp: 'Начислено',
+  receiptFinds: 'Находок',
+  receiptFirstTime: 'впервые',
+  receiptImpact: 'ВЛИЯНИЕ',
+  receiptNoImpact: 'Контракты не продвинулись.',
+  receiptNext: 'СЛЕДУЮЩИЙ ОРИЕНТИР',
+  accessExpanded: 'ДОСТУП РАСШИРЕН',
+  levelUp: 'УРОВЕНЬ ПОВЫШЕН',
+  beaconReady: 'готов к сдаче',
+  beaconLevel: 'До уровня',
+  lcNeedPrefix: 'нужна для',
+  lcNeedOf: 'из',
   skipAnim: 'ПРОПУСТИТЬ',
   closeLoot: 'ЗАКРЫТЬ',
   level: 'УРОВЕНЬ',
@@ -635,10 +766,25 @@ const S = {
   invEmpty: 'Инвентарь пуст. Выполните вылазку.',
   invMaterials: 'МАТЕРИАЛЫ',
   invGear: 'СНАРЯЖЕНИЕ',
+  gearTitle: 'ФОРМУЛЯР ОПЕРАТОРА',
+  gearNavLabel: 'ФОРМУЛЯР',
+  gearClass: 'КЛАСС ОСНАЩЕНИЯ',
+  gearClassHint: 'Считается по НАЙДЕННОМУ, а не по надетому. Надетое — вид, не допуск: на награду за вылазку и на допуски не влияет.',
+  gearBelt: 'ПОЯС',
+  gearBeltSlot: 'АРТЕФАКТ',
+  gearEmptySlot: 'пусто',
+  gearNothingFound: 'ничего не найдено',
+  gearUnequip: 'СНЯТЬ',
+  gearWeight: 'вес',
+  slots: {
+    head: 'ГОЛОВА', face: 'ЛИЦО', body: 'ТУШКА', legs: 'ШТАНЫ',
+    hands: 'РУКИ', rig: 'РАЗГРУЗКА', backpack: 'РЮКЗАК', weapon: 'ОРУЖИЕ',
+  },
   invCollectibles: 'КОЛЛЕКЦИЯ',
   invArtifacts: 'АРТЕФАКТЫ',
   neededForContract: 'КОНТРАКТ',
   contractsTitle: 'КОНТРАКТЫ',
+  contractAnyLoc: 'ЛЮБАЯ ЛОКАЦИЯ',
   contractsNavLabel: 'КОНТРАКТЫ',
   contractsReadyUnit: 'готово к сдаче',
   openBoardBtn: 'ОТКРЫТЬ ДОСКУ',
@@ -676,6 +822,8 @@ const S = {
   logTotalSorties: 'Всего вылазок',
   resetBtn: 'СБРОСИТЬ ВСЁ',
   confirmImport: 'Загрузить сохранение? Текущий прогресс будет заменён.',
+  importFailed: 'Файл не распознан как сохранение РЕЙДА. Текущий прогресс не тронут.',
+  saveFailed: 'Не удалось записать данные в память браузера. Освободите место и повторите — иначе прогресс этой вылазки не сохранится.',
   confirmReset: 'Сбросить все данные? Это необратимо.',
   cancelBtn: 'ОТМЕНА',
   confirmBtn: 'ПОДТВЕРДИТЬ',
@@ -743,6 +891,7 @@ const ITEMS = [
   { id: 'sector_pass',    name: 'Просроченный пропуск',  rarity: 'uncommon', type: 'material', activities: ['spanish', 'reading'], glyph: '▣', dropChannel: 'material', unique: false, stackable: true, consumable: true },
   { id: 'corroded_badge', name: 'Коррозированный жетон', rarity: 'uncommon', type: 'material', activities: ['reading', 'spanish'], glyph: '⬡', dropChannel: 'material', unique: false, stackable: true, consumable: true },
   { id: 'cipher_sheet',   name: 'Шифровальный бланк',    rarity: 'uncommon', type: 'material',  activities: ['spanish', 'handwriting'], glyph: '⌬', dropChannel: 'material', unique: false, stackable: true, consumable: true },
+  { id: 'antenna_coil',   name: 'Катушка антенного контура', rarity: 'rare', type: 'material', activities: ['spanish'], glyph: '⊚', role: 'contract_part', dropChannel: 'special', unique: false, stackable: true, consumable: true },
   { id: 'gear_head', name: 'Каска радиста',      rarity: 'rare', type: 'gear', slot: 'head', activities: ['spanish'], glyph: '◯', role: 'gear', dropChannel: 'special', unique: true, stackable: false, consumable: false },
   { id: 'gear_face', name: 'Противогаз-фильтр',   rarity: 'rare', type: 'gear', slot: 'face', activities: ['spanish'], glyph: '◒', role: 'gear', dropChannel: 'special', unique: true, stackable: false, consumable: false },
   { id: 'gear_rig',  name: 'Антенная разгрузка',  rarity: 'rare', type: 'gear', slot: 'rig',  activities: ['spanish'], glyph: '⌆', role: 'gear', dropChannel: 'special', unique: true, stackable: false, consumable: false },
@@ -766,8 +915,31 @@ const ITEMS = [
   { id: 'field_bandage', name: 'Полевой бинт',      rarity: 'common',   type: 'material', activities: ['spanish', 'handwriting', 'training', 'reading'], glyph: '≡', dropChannel: 'material', unique: false, stackable: true, consumable: true },
   { id: 'army_medkit',   name: 'Армейская аптечка', rarity: 'uncommon', type: 'material', activities: ['spanish', 'handwriting', 'training', 'reading'], glyph: '✛', dropChannel: 'material', unique: false, stackable: true, consumable: true },
 
-  /* ── Контрактные материалы/награды ────────────────────────────────────── */
-  { id: 'traction_battery', name: 'Тяговый аккумулятор', rarity: 'uncommon', type: 'material', activities: ['spanish', 'training'], glyph: '⏚', dropChannel: 'material', unique: false, stackable: true, consumable: true },
+  /* ── Пропуска ─────────────────────────────────────────────────────────── */
+  /* Пропуск — ДОКУМЕНТ, а не валюта и не артефакт: одна штука = один вход,
+     без номиналов и обмена. Падает в БАЗОВЫХ секторах всех локаций, чтобы
+     пауза в занятиях никогда не запирала глубину. Ни один контракт его не
+     требует. Артефактом быть не может: граница «артефакт не бывает
+     обязательным требованием» держится на том, что стабилизатор открывает
+     сектор и не расходуется — пропуск-артефакт её бы стёр. */
+  { id: 'pass_sump', name: 'Путевой лист отстойника', rarity: 'rare', type: 'material', activities: ['spanish', 'handwriting', 'training', 'reading'], glyph: '⌸', role: 'sector_pass', dropChannel: 'special', unique: false, stackable: true, consumable: true },
+
+  /* ── Танковый отстойник (глубокий сектор Промдвора) ───────────────────── */
+  /* РОД «аккумулятор»: общее существительное, разные спецификаторы, разные
+     редкости — отсутствующий член читается как дырка в наборе, а не как
+     слабая цифра. Различать членов рода цифрами нельзя: это лестница
+     грейдов, а нужна таксономия. Все предметы рода — только в глубине
+     (activities пустой, sectors заполнен): протечка любого в базовый пул
+     размывает «адрес» сектора, ради которого туда и ходят.
+     Хотя бы один член рода обязан быть повторяемым (unique: false) —
+     иначе собравший всё уникальное тратит пропуск и получает пустой
+     спецбросок, единственный сценарий, в котором проект наказывает. */
+  { id: 'traction_battery', name: 'Тяговый аккумулятор', rarity: 'uncommon', type: 'material', activities: [], sectors: ['tank_sump'], glyph: '⏚', role: 'contract_part', dropChannel: 'special', unique: false, stackable: true, consumable: true },
+  { id: 'reserve_battery',  name: 'Резервный аккумулятор', rarity: 'rare', type: 'material', activities: [], sectors: ['tank_sump'], glyph: '⎓', role: 'contract_part', dropChannel: 'special', unique: false, stackable: true, consumable: true },
+  { id: 'sump_respirator', name: 'Изолирующий респиратор', rarity: 'very_rare', type: 'gear', slot: 'face', activities: [], sectors: ['tank_sump'], glyph: '⊗', role: 'gear', dropChannel: 'special', unique: true, stackable: false, consumable: false },
+  { id: 'sealed_battery',  name: 'Запаянный аккумулятор', rarity: 'legendary', type: 'collectible', activities: [], sectors: ['tank_sump'], glyph: '❈', role: 'legendary', dropChannel: 'special', unique: true, stackable: false, consumable: false },
+
+  /* ── Награды контрактов ───────────────────────────────────────────────── */
   { id: 'combo_backpack', name: 'Экспедиционный рюкзак', rarity: 'rare', type: 'gear', slot: 'backpack', activities: [], glyph: '▥', role: 'gear', dropChannel: 'special', unique: true, stackable: false, consumable: false },
 ];
 
@@ -776,42 +948,93 @@ const ITEMS = [
    from the special channel at all — equalized across every base sector so no
    location is more "attractive" than another; only the channels (which roles
    are available, and their relative weight) differ, which is where each
-   sector's actual content/flavor comes from. specialChanceDeep is the (not
-   yet reachable — no deep-sector selection exists) deep-sector variant.
+   sector's actual content/flavor comes from. Глубокие секторы держат свой
+   профиль в DEEP_SECTORS — отдельно, чтобы у базового и платного входа не
+   было общего источника правды.
    channels[].weight is only relative *within* a sector's own specialChance
-   envelope — it does not need to sum to anything in particular. */
+   envelope — it does not need to sum to anything in particular.
+   ГЛАВНЫЕ РУЧКИ БАЛАНСА: вес sector_pass (как часто вообще возможен поход
+   в глубину) и вес key_artifact. Крутить ПОСЛЕ игры, а не заранее. */
 const SECTOR_LOOT_PROFILES = {
   'Промдвор': {
-    specialChance: 0.20, specialChanceDeep: 0.30,
+    specialChance: 0.20,
     channels: [
       { role: 'gear',          weight: 7 },
       { role: 'contract_part', weight: 12 },
+      { role: 'sector_pass',   weight: 10 },
       { role: 'legendary',     weight: 2 },
     ],
   },
+  /* contract_part is what keeps a sector's special channel alive forever: every
+     other role here is unique, so without a repeatable item the channel empties
+     out for good once the last unique is found and card 3 silently degrades to
+     a plain material. Радиовышка had no contract_part until antenna_coil. */
   'Радиовышка': {
-    specialChance: 0.20, specialChanceDeep: 0.30,
+    specialChance: 0.20,
     channels: [
-      { role: 'gear',         weight: 7 },
-      { role: 'key_artifact', weight: 8 },
-      { role: 'legendary',    weight: 2 },
+      { role: 'gear',          weight: 7 },
+      { role: 'contract_part', weight: 12 },
+      // 8 -> 14: появление пропуска в спецканале разбавило долю ключевого
+      // артефакта; аудит уже фиксировал просадку с ~9.4% до ~5.5% за вылазку.
+      // 14 возвращает её к ~6.2%. Ориентир из handoff — 8%.
+      { role: 'key_artifact',  weight: 14 },
+      { role: 'sector_pass',   weight: 10 },
+      { role: 'legendary',     weight: 2 },
     ],
   },
   'Архив': {
-    specialChance: 0.20, specialChanceDeep: 0.30,
+    specialChance: 0.20,
     channels: [
       { role: 'contract_part', weight: 12 },
+      { role: 'sector_pass',   weight: 10 },
       { role: 'legendary',     weight: 2 },
     ],
   },
   'Книгохранилище': {
-    specialChance: 0.20, specialChanceDeep: 0.30,
+    specialChance: 0.20,
     channels: [
       { role: 'contract_part', weight: 12 },
+      { role: 'sector_pass',   weight: 10 },
       { role: 'legendary',     weight: 2 },
     ],
   },
 };
+
+/* ── DEEP SECTORS ────────────────────────────────────────────────────────── */
+/* Вход ПЛАТНЫЙ: тратится ровно одна штука passItemId за вылазку. Поэтому
+   specialChance глубины = 1.0 (решение 4 этапа 3): плата, после которой можно
+   уйти ни с чем, читается как штраф и учит не платить. Неопределённость
+   смещена с «будет ли предмет глубины» на «какой именно».
+   requirements проверяются заранее и вход просто закрыт замком со списком
+   условий — «умереть» в секторе нельзя, потерять ничего нельзя.
+   minGearScore и minFilledSlots считаются по НАЙДЕННОМУ (discoveries), как
+   и класс оснащения: формуляр не нужно обслуживать ради допуска.
+   Базовый сектор локации при этом доступен ВСЕГДА и награждает плоско. */
+const DEEP_SECTORS = [
+  {
+    id: 'tank_sump',
+    name: 'Танковый отстойник',
+    location: 'Промдвор',
+    passItemId: 'pass_sump',
+    requirements: {
+      minLevel: 5,
+      minGearScore: 12,
+      minFilledSlots: 3,
+      requiredItemIds: ['dielectric_stabilizer'],
+    },
+    profile: {
+      specialChance: 1.0,
+      channels: [
+        { role: 'contract_part', weight: 12 },
+        { role: 'gear',          weight: 6 },
+        { role: 'legendary',     weight: 3 },
+      ],
+    },
+  },
+];
+
+function deepSectorsFor(location) { return DEEP_SECTORS.filter(s => s.location === location); }
+function deepSectorById(id) { return DEEP_SECTORS.find(s => s.id === id); }
 
 /* ── ACHIEVEMENTS ────────────────────────────────────────────────────────── */
 /* Дни считаются накопительно (всего), а не подряд — конфликт 1 решён в пользу
@@ -937,16 +1160,46 @@ const CONTRACT_TEMPLATES = [
     requires: [{ itemId: 'damp_notebook', qty: 3 }, { itemId: 'microfiche', qty: 2 }],
     reward: { items: [{ itemId: 'cipher_sheet', qty: 1 }] } },
 
+  /* Вторая серия локационных контрактов — единственные потребители ключевых
+     деталей (role: contract_part). Без них деталь падает чаще всего среди
+     редкого и при этом не тратится никуда, то есть нарушает «никаких
+     предметов без будущего применения». Слот локации выбирает случайный
+     шаблон из своих (см. generateContracts), поэтому обе серии живые. */
+  { id: 'promdvor_bearing', title: 'ЗАМЕНА ПОДШИПНИКОВ', location: 'Промдвор',
+    requires: [{ itemId: 'stamped_bearing', qty: 1 }, { itemId: 'tin_filter', qty: 2 }],
+    reward: { items: [{ itemId: 'army_medkit', qty: 1 }] } },
+
+  { id: 'radiovyshka_antenna', title: 'РЕМОНТ АНТЕННЫ', location: 'Радиовышка',
+    requires: [{ itemId: 'antenna_coil', qty: 1 }, { itemId: 'radio_fragment', qty: 2 }],
+    reward: { items: [{ itemId: 'signal_tape', qty: 1 }] } },
+
+  { id: 'arkhiv_certify', title: 'ЗАВЕРЕНИЕ ФОНДОВ', location: 'Архив',
+    requires: [{ itemId: 'registrar_seal', qty: 1 }, { itemId: 'ink_cartridge', qty: 2 }],
+    reward: { items: [{ itemId: 'cipher_sheet', qty: 1 }] } },
+
+  { id: 'knigokhran_survey', title: 'СВЕРКА КАРТ СЕКТОРА', location: 'Книгохранилище',
+    requires: [{ itemId: 'catalog_card', qty: 1 }, { itemId: 'drain_map', qty: 2 }],
+    reward: { items: [{ itemId: 'microfiche', qty: 1 }] } },
+
   { id: 'med_station', title: 'МЕДПУНКТ СТАНЦИИ', location: null,
     requires: [{ itemId: 'aidulin', qty: 2 }, { itemId: 'field_bandage', qty: 2 }, { itemId: 'army_medkit', qty: 1 }],
     reward: { items: [{ itemId: 'corroded_badge', qty: 1 }] } },
 
+  /* Финал вертикального среза: стабилизатор → отстойник → аккумуляторы →
+     комбо → рюкзак. Оба требования — предметы ГЛУБИНЫ, то есть контракт
+     закрывается только походами в отстойник. Он появляется на доске раньше,
+     чем становится выполнимым, и это нормально: цель, а не блокер. */
   { id: 'combo_radiovyshka_promdvor', title: 'ПЕРЕКРЁСТНАЯ ПОСТАВКА', combo: true, locations: ['Радиовышка', 'Промдвор'],
-    requires: [{ itemId: 'traction_battery', qty: 3 }],
+    requires: [{ itemId: 'traction_battery', qty: 3 }, { itemId: 'reserve_battery', qty: 1 }],
     reward: { items: [{ itemId: 'combo_backpack', qty: 1 }], displaySlot: true } },
 ];
 
 const GEAR_SLOTS = ['head', 'face', 'body', 'legs', 'hands', 'rig', 'backpack', 'weapon'];
+
+/* Вес слота по редкости — строго монотонный, из handoff (этап 3, п.1).
+   Единственное, во что превращается редкость снаряжения: ни статов, ни
+   бонусов к луту у предметов нет. Сумма весов = класс оснащения. */
+const RARITY_WEIGHT = { common: 1, uncommon: 2, rare: 4, very_rare: 7, legendary: 12 };
 
 /* Sanity-checks the static config (ITEMS/SECTOR_LOOT_PROFILES/CONTRACT_
    TEMPLATES) at startup. Logs every violation found rather than throwing —
@@ -987,13 +1240,53 @@ function validateConfigs() {
     if (!ITEMS.some(i => i.type === 'gear' && i.slot === slot)) errors.push('No gear item covers slot "' + slot + '"');
   });
 
+  DEEP_SECTORS.forEach(sec => {
+    // платный вход обязан быть гарантированным: иначе пропуск сгорает впустую,
+    // и это единственный способ, которым проект может наказать
+    if (sec.passItemId && sec.profile.specialChance !== 1) {
+      errors.push('DEEP_SECTORS.' + sec.id + ': вход платный, а specialChance != 1 (' + sec.profile.specialChance + ')');
+    }
+    const pass = sec.passItemId && byId(sec.passItemId);
+    if (sec.passItemId && !pass) errors.push('DEEP_SECTORS.' + sec.id + ': пропуск "' + sec.passItemId + '" не найден в ITEMS');
+    if (pass) {
+      if (pass.type === 'artifact') errors.push('DEEP_SECTORS.' + sec.id + ': пропуск не может быть артефактом');
+      if (!pass.consumable) errors.push('DEEP_SECTORS.' + sec.id + ': пропуск не расходуемый');
+      if (pass.unique) errors.push('DEEP_SECTORS.' + sec.id + ': пропуск должен быть повторяемым');
+      if (CONTRACT_TEMPLATES.some(t => t.requires.some(r => r.itemId === pass.id))) {
+        errors.push('DEEP_SECTORS.' + sec.id + ': пропуск требуется контрактом — документ превращается в валюту');
+      }
+    }
+    (sec.requirements.requiredItemIds || []).forEach(id => {
+      if (!byId(id)) errors.push('DEEP_SECTORS.' + sec.id + ': требует несуществующий предмет "' + id + '"');
+    });
+    const pool = ITEMS.filter(i => (i.sectors || []).includes(sec.id));
+    sec.profile.channels.forEach(ch => {
+      if (!(ch.weight > 0)) errors.push('DEEP_SECTORS.' + sec.id + ' channel "' + ch.role + '" has non-positive weight');
+      if (!pool.some(i => i.role === ch.role)) {
+        errors.push('DEEP_SECTORS.' + sec.id + ' references role "' + ch.role + '" with no matching item');
+      }
+    });
+    // тот же инвариант, что в базе, но здесь вырождение пула стоит пропуска
+    if (!pool.some(i => !i.unique)) {
+      errors.push('DEEP_SECTORS.' + sec.id + ': в пуле нет ни одного повторяемого предмета — платный вход выродится');
+    }
+  });
+
+  // предмет глубины не должен встречаться в базовых пулах: иначе у сектора
+  // пропадает «адрес», ради которого туда ходят
+  ITEMS.forEach(i => {
+    if ((i.sectors || []).length && i.activities.length) {
+      errors.push('ITEMS.' + i.id + ': предмет глубины протекает в базовые пулы (activities не пустой)');
+    }
+  });
+
   if (errors.length) errors.forEach(e => console.error('[config validation]', e));
   return errors;
 }
 
 /* ── STORAGE ─────────────────────────────────────────────────────────────── */
 const KEY = 'raidlog_v1';
-const APP_VERSION = '0.9.0';
+const APP_VERSION = '0.2.4';
 const DEV_MODE_KEY = 'raidlog_devmode_v1';
 const DEV_UNGATE_KEY = 'raidlog_dev_ungate_v1';
 
@@ -1082,7 +1375,7 @@ function upgradeDiscoveriesToV3(db) {
     });
   });
 
-  (db.contracts.completed || []).forEach(c => {
+  ((db.contracts && db.contracts.completed) || []).forEach(c => {
     const tpl = CONTRACT_TEMPLATES.find(t => t.id === c.templateId);
     const granted = Array.isArray(c.grantedItems) ? c.grantedItems
       : (tpl ? (tpl.reward.items || []).flatMap(ri => Array(ri.qty).fill(ri.itemId)) : []);
@@ -1114,6 +1407,11 @@ function upgradeDiscoveriesToV3(db) {
     }
     if (!item.unique || disc.totalFound === 0) disc.totalFound += 1;
   });
+
+  // this runs before normalizeDB (see coerceToV3), so a save missing a key
+  // entirely must not throw here — a TypeError escapes load() uncaught and
+  // takes the whole page down instead of just that save
+  if (!db.inventory || typeof db.inventory !== 'object') db.inventory = {};
 
   const RECLASSIFIED_TO_MATERIAL = ['stamped_bearing', 'registrar_seal', 'catalog_card'];
   RECLASSIFIED_TO_MATERIAL.forEach(id => {
@@ -1177,7 +1475,20 @@ function load() {
   return coerceToV3(raw) || emptyDB();
 }
 
-function save() { localStorage.setItem(KEY, JSON.stringify(DB)); }
+/* Never let a failed write escape as an exception: save() is called from inside
+   completeSortie(), so a throw here unwinds past showLoot() and leaves every
+   sortie button disabled (sortieBusy stays true) with nothing on screen saying
+   why — and the sortie itself unsaved. Reported once per session so a full
+   quota doesn't turn every tap into a dialog. */
+let saveFailReported = false;
+function save() {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(DB));
+  } catch (err) {
+    console.error('[save]', err);
+    if (!saveFailReported) { saveFailReported = true; alert(S.saveFailed); }
+  }
+}
 
 /* pendingReveal lives outside the DB blob — it's UI-recovery state, not save
    data, so it shouldn't round-trip through export/import. The session and its
@@ -1269,27 +1580,60 @@ function displayCapacity() {
 /* sum of the best-ever-FOUND item per gear slot + the two best-ever-found
    artifacts (type artifact, any role) — deliberately reads discoveries, never
    gear.appearance: what's currently equipped/worn is cosmetic only and must
-   never move this number. Rarity rank+1 so even a common find contributes
-   (rank 0 would otherwise be worth nothing). */
+   never move this number, so the formular never needs servicing before a raid.
+   Weights are RARITY_WEIGHT (1/2/4/7/12), not the rarity index: the deep-sector
+   gate (minGearScore 12) was written against that scale. */
 function equipmentClass() {
   let total = 0;
   GEAR_SLOTS.forEach(slot => {
-    let best = -1;
+    let best = 0;
     ITEMS.forEach(item => {
       if (item.type === 'gear' && item.slot === slot && DB.discoveries[item.id]) {
-        const rank = RARITY_ORDER.indexOf(item.rarity);
-        if (rank > best) best = rank;
+        const w = RARITY_WEIGHT[item.rarity] || 0;
+        if (w > best) best = w;
       }
     });
-    if (best >= 0) total += best + 1;
+    total += best;
   });
-  const artifactRanks = ITEMS
+  const artifactWeights = ITEMS
     .filter(i => i.type === 'artifact' && DB.discoveries[i.id])
-    .map(i => RARITY_ORDER.indexOf(i.rarity) + 1)
+    .map(i => RARITY_WEIGHT[i.rarity] || 0)
     .sort((a, b) => b - a)
     .slice(0, 2);
-  return total + artifactRanks.reduce((s, r) => s + r, 0);
+  return total + artifactWeights.reduce((s, w) => s + w, 0);
 }
+
+/* Заполненность слотов — тоже по НАЙДЕННОМУ, как и класс: допуск в глубину
+   не должен зависеть от того, обслужил ли человек формуляр перед вылазкой. */
+function filledSlotCount() {
+  return GEAR_SLOTS.filter(slot =>
+    ITEMS.some(i => i.type === 'gear' && i.slot === slot && DB.discoveries[i.id])).length;
+}
+
+/* Состояние глубокого сектора: условия с отметками, открыт ли, есть ли пропуск.
+   Ничего не меняет — только читает. Замок показывается заранее, «умереть»
+   в секторе нельзя. */
+function deepSectorStatus(sector) {
+  const r = sector.requirements;
+  const ungated = devMode && devUngateLevels;
+  const lvl = level();
+  const cls = equipmentClass();
+  const slots = filledSlotCount();
+  const conditions = [
+    { id: 'level', label: S.condLevel, have: lvl,   need: r.minLevel,       met: ungated || lvl >= r.minLevel },
+    { id: 'class', label: S.condClass, have: cls,   need: r.minGearScore,   met: ungated || cls >= r.minGearScore },
+    { id: 'slots', label: S.condSlots, have: slots, need: r.minFilledSlots, met: ungated || slots >= r.minFilledSlots },
+  ];
+  (r.requiredItemIds || []).forEach(id => {
+    const item = byId(id);
+    conditions.push({ id: 'item:' + id, label: item ? item.name : id, item: true, met: ungated || !!DB.discoveries[id] });
+  });
+  const passes = DB.inventory[sector.passItemId] || 0;
+  const unlocked = conditions.every(c => c.met);
+  return { conditions, unlocked, passes, ready: unlocked && passes > 0 };
+}
+
+function canEnterDeep(sector) { return deepSectorStatus(sector).unlocked; }
 
 function sessCount(actId) {
   return actId
@@ -1423,18 +1767,26 @@ function rollMaterial(actId, rarity, exclude) {
   return otherPool.length ? pickRandom(otherPool) : null;
 }
 
-function specialPool(actId, role, exclude) {
-  return ITEMS.filter(i => i.role === role && i.activities.includes(actId) && !exclude.has(i.id) && (!i.unique || !isDiscoveredOrOwned(i)));
+/* sectorId выбирает пул: у базового сектора предметы отбираются по activities,
+   у глубокого — по sectors. Пересечения нет by design (validateConfigs следит),
+   поэтому предмет глубины не может прийти базовой вылазкой и наоборот. */
+function specialPool(actId, role, exclude, sectorId) {
+  return ITEMS.filter(i => {
+    if (i.role !== role || exclude.has(i.id)) return false;
+    if (i.unique && isDiscoveredOrOwned(i)) return false;
+    return sectorId ? (i.sectors || []).includes(sectorId) : i.activities.includes(actId);
+  });
 }
 
-function rollSpecial(actId, exclude) {
+function rollSpecial(actId, exclude, sectorId) {
+  const sector = sectorId ? deepSectorById(sectorId) : null;
   const act = byAct(actId);
-  const profile = act && SECTOR_LOOT_PROFILES[act.location];
+  const profile = sector ? sector.profile : (act && SECTOR_LOOT_PROFILES[act.location]);
   if (!profile) return null;
   if (Math.random() >= profile.specialChance) return null;
 
   const buckets = profile.channels
-    .map(ch => ({ weight: ch.weight, pool: specialPool(actId, ch.role, exclude) }))
+    .map(ch => ({ weight: ch.weight, pool: specialPool(actId, ch.role, exclude, sectorId) }))
     .filter(b => b.pool.length > 0);
   if (!buckets.length) return null;
 
@@ -1447,7 +1799,10 @@ function rollSpecial(actId, exclude) {
   return pickRandom(buckets[buckets.length - 1].pool);
 }
 
-function rollLootV2(actId) {
+/* Глубина меняет ТРЕТЬЮ карточку, а не удваивает добычу: карточки 1 и 2
+   остаются обычными материалами локации. Разница между секторами — в
+   эксклюзивности содержимого, а не в «больше того же самого». */
+function rollLootV2(actId, sectorId) {
   const exclude = new Set();
   const drops = [];
 
@@ -1457,7 +1812,7 @@ function rollLootV2(actId) {
   const c2 = rollMaterial(actId, rollMaterialRarity(), exclude);
   if (c2) { drops.push({ itemId: c2.id }); exclude.add(c2.id); }
 
-  const special = rollSpecial(actId, exclude);
+  const special = rollSpecial(actId, exclude, sectorId);
   if (special) {
     drops.push({ itemId: special.id });
     exclude.add(special.id);
@@ -1585,8 +1940,11 @@ function generateContracts(dateStr) {
       return t && !t.combo && t.location === a.location;
     });
     if (slotOccupied) return;
-    const tpl = CONTRACT_TEMPLATES.find(t => !t.combo && t.location === a.location);
-    if (tpl) DB.contracts.active.push({ id: uid(), templateId: tpl.id });
+    // random among the location's templates, not the first match: with .find()
+    // every template added after the first for a location would be unreachable
+    // forever, which quietly breaks "новый контент — данными, не новым кодом"
+    const pool = CONTRACT_TEMPLATES.filter(t => !t.combo && t.location === a.location);
+    if (pool.length) DB.contracts.active.push({ id: uid(), templateId: pickRandom(pool).id });
   });
 
   if (isFirstEver && DB.contracts.active.length < 10) {
@@ -1645,11 +2003,28 @@ function submitContract(activeId) {
    this exact pipeline instead of a separate simulation. A backdated sortie
    never touches contract generation — that stays gated to real, same-day
    play, so a fake past date can't corrupt lastGeneratedLocalDate. */
+/* opts.sectorId — глубокий сектор, где была вылазка. Вход платный: проверить →
+   списать пропуск → бросить лут глубины → сохранить, тем же порядком, что
+   сдача контракта. Если условия не выполнены или пропуска нет, вылазка молча
+   идёт в БАЗОВЫЙ сектор, а не отменяется: запретить человеку отметить реальное
+   занятие нельзя ни при каких обстоятельствах. */
 function completeSortie(actId, opts) {
   opts = opts || {};
   const now = opts.date || new Date();
   const dateStr = localDate(now);
-  const drops = rollLootV2(actId);
+
+  let sectorId = null;
+  const sector = opts.sectorId ? deepSectorById(opts.sectorId) : null;
+  if (sector && sector.location === (byAct(actId) || {}).location && canEnterDeep(sector)) {
+    const have = DB.inventory[sector.passItemId] || 0;
+    if (have > 0) {
+      const next = have - 1;
+      if (next > 0) DB.inventory[sector.passItemId] = next; else delete DB.inventory[sector.passItemId];
+      sectorId = sector.id;
+    }
+  }
+
+  const drops = rollLootV2(actId, sectorId);
 
   const sess = {
     id: uid(),
@@ -1660,6 +2035,10 @@ function completeSortie(actId, opts) {
     xpAwarded: 10,
     drops,
   };
+  // аддитивное поле, schemaVersion остаётся 3: сессия без него = базовый сектор.
+  // Без него архив не отличит базовую вылазку от глубокой, и квитанция начнёт
+  // врать — а честность архива тут важнее компактности записи
+  if (sectorId) sess.sectorId = sectorId;
   if (opts.source) sess.source = opts.source;
 
   applyDrops(drops, { actId, dateStr, isoTimestamp: sess.completedAt, kind: opts.source === 'dev' ? 'dev' : 'sortie', sourceId: sess.id });
@@ -1732,37 +2111,59 @@ function grantItemDev(itemId) {
   return true;
 }
 
-/* removes every source:'dev' session and every devGrants entry, reversing
-   exactly what each contributed (same clamp-at-zero safety as the old undo
-   had): material counts decrement but never go negative (some of a dev-
-   granted stack may have since been spent on a real contract), and a non-
-   material item is only removed if its discovery is still attributed to a
-   dev source (never true here, since non-repeatable items can't be granted
-   twice, but kept as a guard rather than an assumption) */
+/* removes every source:'dev' session and every devGrants entry, reversing what
+   each contributed. A non-material item is only removed if its discovery is
+   still attributed to a dev source. Materials need real bookkeeping — see the
+   comment on devAdded below; the naive per-drop decrement this used to do could
+   take back items a real sortie had brought in. */
 function clearDevTraces() {
   if (!devMode) return 0;
 
-  function reverseDrop(itemId) {
+  function reverseNonMaterial(itemId) {
     const item = byId(itemId);
-    if (!item) return;
-    if (item.type === 'material') {
-      const next = (DB.inventory[item.id] || 0) - 1;
-      if (next > 0) DB.inventory[item.id] = next; else delete DB.inventory[item.id];
-    } else {
-      const disc = DB.discoveries[item.id];
-      if (disc && disc.firstSource && disc.firstSource.kind === 'dev') {
-        delete DB.discoveries[item.id];
-        if (item.type === 'gear') {
-          const idx = DB.gear.owned.indexOf(item.id);
-          if (idx !== -1) DB.gear.owned.splice(idx, 1);
-        }
+    if (!item || item.type === 'material') return;
+    const disc = DB.discoveries[item.id];
+    if (disc && disc.firstSource && disc.firstSource.kind === 'dev') {
+      delete DB.discoveries[item.id];
+      if (item.type === 'gear') {
+        const idx = DB.gear.owned.indexOf(item.id);
+        if (idx !== -1) DB.gear.owned.splice(idx, 1);
       }
     }
   }
 
+  /* Materials are a fungible stack: once a dev unit is in inventory it is
+     indistinguishable from one a real sortie brought in. Decrementing once per
+     dev drop therefore eats real units whenever a contract was closed using dev
+     material — that spend already came out of the same stack, so the reversal
+     charges it a second time. Example: dev gave 2 bolts, real sorties 2, a
+     contract ate 3, one left; two blind decrements clamp it to zero, while
+     without the dev sorties the contract could never have been submitted and
+     both real bolts would still be there. Counting what dev added and charging
+     every contract spend to dev units first makes the reversal take back only
+     what dev added and the player still holds. */
+  const devAdded = {};
+  const countOrReverse = itemId => {
+    const item = byId(itemId);
+    if (item && item.type === 'material') devAdded[itemId] = (devAdded[itemId] || 0) + 1;
+    else reverseNonMaterial(itemId);
+  };
+
   const devSessions = DB.sessions.filter(s => s.source === 'dev');
-  devSessions.forEach(sess => (sess.drops || []).forEach(d => reverseDrop(d.itemId)));
-  DB.devGrants.forEach(g => reverseDrop(g.itemId));
+  devSessions.forEach(sess => (sess.drops || []).forEach(d => countOrReverse(d.itemId)));
+  DB.devGrants.forEach(g => countOrReverse(g.itemId));
+
+  const consumed = {};
+  DB.contracts.completed.forEach(c => (c.consumedItems || []).forEach(r => {
+    consumed[r.itemId] = (consumed[r.itemId] || 0) + r.qty;
+  }));
+
+  Object.keys(devAdded).forEach(id => {
+    const have = DB.inventory[id] || 0;
+    const take = Math.min(have, Math.max(0, devAdded[id] - (consumed[id] || 0)));
+    const next = have - take;
+    if (next > 0) DB.inventory[id] = next; else delete DB.inventory[id];
+  });
 
   DB.sessions = DB.sessions.filter(s => s.source !== 'dev');
   DB.devGrants = [];
@@ -1777,7 +2178,8 @@ let tab = 'sortie';
 let tabStack = [];   // screens (system/contracts) can open from one another, so a
                       // single prevTab isn't enough once navigation nests two deep
 let sortieBusy = false;
-let armedActId = null;   // activity whose button is armed, awaiting the confirming second tap
+let armedActId = null;      // activity whose button is armed, awaiting the confirming second tap
+let armedSectorId = null;   // и сектор той же кнопки: у локации их может быть несколько
 let armedTimer = null;
 let calY = new Date().getFullYear();
 let calM = new Date().getMonth() + 1;
@@ -1822,16 +2224,20 @@ function closeScreen() {
   renderCurrent();
 }
 
-function armSortie(actId) {
+function armSortie(actId, sectorId) {
   armedActId = actId;
+  armedSectorId = sectorId || null;
   if (armedTimer) clearTimeout(armedTimer);
-  armedTimer = setTimeout(() => { armedActId = null; armedTimer = null; renderCurrent(); }, 4000);
+  armedTimer = setTimeout(() => {
+    armedActId = null; armedSectorId = null; armedTimer = null; renderCurrent();
+  }, 4000);
   renderCurrent();
 }
 
 function disarmSortie() {
   if (armedTimer) { clearTimeout(armedTimer); armedTimer = null; }
   armedActId = null;
+  armedSectorId = null;
 }
 
 /* ── RENDER ──────────────────────────────────────────────────────────────── */
@@ -1859,7 +2265,7 @@ function animateXpCountUp(fromXp, toXp, duration) {
 
 function renderCurrent() {
   document.querySelectorAll('.t-btn').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
-  ['sortie','inventory','calendar','achievements','system','contracts'].forEach(t => {
+  ['sortie','inventory','calendar','achievements','system','contracts','gear'].forEach(t => {
     document.getElementById('tab-' + t).hidden = (t !== tab);
   });
   const el = document.getElementById('tab-' + tab);
@@ -1869,6 +2275,7 @@ function renderCurrent() {
   if (tab === 'achievements') renderAchievements(el);
   if (tab === 'system')       renderSystem(el);
   if (tab === 'contracts')    renderContracts(el);
+  if (tab === 'gear')         renderGear(el);
 }
 
 /* ── SORTIE ──────────────────────────────────────────────────────────────── */
@@ -1880,7 +2287,7 @@ function contractCardHtml(inst, extraFooterHtml) {
   if (!tpl) return '';
   const status = requirementStatus(inst.templateId);
   const ready = status.every(r => r.met);
-  const locLabel = tpl.combo ? tpl.locations.join(' × ') : (tpl.location || S.contractsTitle);
+  const locLabel = tpl.combo ? tpl.locations.join(' × ') : (tpl.location || S.contractAnyLoc);
   const accent = tpl.combo ? 'var(--acc)' : (ACTIVITIES.find(a => a.location === tpl.location)?.accent || 'var(--brd)');
   const comboTag = tpl.combo ? `<span class="contract-combo-tag">${S.contractComboTag}</span> ` : '';
   const reqRows = status.map(r => {
@@ -1915,11 +2322,34 @@ function renderSortie(el) {
   ACTIVITIES.forEach(a => {
     const tc = todayCount(a.id);
     const tot = sessCount(a.id);
-    const armed = armedActId === a.id;
+    const armed = armedActId === a.id && !armedSectorId;
     const label = armed
       ? `<span class="cmp-btn-main">${S.confirmSortiePrefix}: ${a.name.toUpperCase()}</span><span class="cmp-btn-sub">${a.location}</span>`
       : S.completeBtn;
     const todayHtml = tc > 0 ? `<span>${S.todaySess} ×<b>${tc}</b></span>` : '';
+
+    /* Глубокие секторы локации. Остаток пропусков до отметки занятия НЕ
+       показываем нигде: счётчик на предвылазочном экране за пару недель
+       превращает механику в планирование занятия под сектор. */
+    let deepHtml = '';
+    deepSectorsFor(a.location).forEach(sec => {
+      const st = deepSectorStatus(sec);
+      if (st.ready) {
+        const armedDeep = armedActId === a.id && armedSectorId === sec.id;
+        const dLabel = armedDeep
+          ? `<span class="cmp-btn-main">${S.confirmSortiePrefix}: ${sec.name.toUpperCase()}</span><span class="cmp-btn-sub">${S.sectorPassCost}</span>`
+          : `${S.sectorReturnPrefix}: ${sec.name.toUpperCase()}`;
+        deepHtml += `<button class="cmp-btn deep${armedDeep ? ' armed' : ''}" data-a="complete" data-act="${a.id}" data-sector="${sec.id}">${dLabel}</button>`;
+      } else {
+        const text = st.unlocked ? S.sectorNeedPass : S.sectorLocked;
+        deepHtml += `<button class="sector-lock" data-a="sector-info" data-sector="${sec.id}">
+          <span class="sector-lock-glyph">⚿</span>
+          <span class="sector-lock-name">${sec.name}</span>
+          <span class="sector-lock-state">${text}</span>
+        </button>`;
+      }
+    });
+
     html += `<div class="act-card" style="border-color:${a.accent}">
       <div class="act-hdr">
         <div class="act-name" style="color:${a.accent}">${a.name}</div>
@@ -1930,6 +2360,7 @@ function renderSortie(el) {
         <span>${S.totalSessLbl}: <b>${tot}</b></span>
       </div>
       <button class="cmp-btn${armed?' armed':''}" data-a="complete" data-act="${a.id}">${label}</button>
+      ${deepHtml}
     </div>`;
   });
 
@@ -1945,11 +2376,12 @@ function invSection(title, items, cntFn, neededSet) {
   if (!items.length) return '';
   const cards = items.map(item => {
     const needed = neededSet && neededSet.has(item.id);
-    return `<div class="inv-item${needed ? ' needed' : ''}" tabindex="0" data-r="${item.rarity}" data-a="inv-detail" data-iid="${item.id}">
+    return `<div class="inv-item${needed ? ' needed' : ''}" role="button" tabindex="0" data-r="${item.rarity}" data-a="inv-detail" data-iid="${item.id}">
       <span class="i-cnt">${cntFn(item)}</span>
       ${needed ? `<span class="i-need">${S.neededForContract}</span>` : ''}
       <div class="i-icon">${item.glyph}</div>
       <div class="i-name">${item.name}</div>
+      <div class="i-rar">${S.rarities[item.rarity]}</div>
     </div>`;
   }).join('');
   return `<div class="inv-sub">${title}</div><div class="inv-grid">${cards}</div>`;
@@ -1972,6 +2404,11 @@ function renderInventory(el) {
     ${readyCount ? `<span class="scr-nav-badge">${readyCount} ${S.contractsReadyUnit}</span>` : ''}
   </button>`;
 
+  html += `<button class="scr-nav-btn" data-a="open-gear">
+    <span>${S.gearNavLabel}</span>
+    <span class="scr-nav-badge">${S.gearClass} ${equipmentClass()}</span>
+  </button>`;
+
   const materials    = ITEMS.filter(i => i.type === 'material'   && DB.inventory[i.id] > 0);
   const gear         = ITEMS.filter(i => i.type === 'gear'       && DB.discoveries[i.id]);
   const collectibles = ITEMS.filter(i => i.type === 'collectible' && DB.discoveries[i.id]);
@@ -1988,6 +2425,105 @@ function renderInventory(el) {
   el.innerHTML = html;
 }
 
+/* ── GEAR (формуляр оператора) ───────────────────────────────────────────── */
+/* Экран ничего не считает сам — он показывает то, что equipmentClass() уже
+   считает по discoveries. Надевание бесплатно, обратимо, XP не даёт и на
+   допуски не влияет: приз за реальное занятие не зависит от того, обслужил
+   ли человек формуляр. Надетое хранится в gear.appearance (косметика). */
+function gearPoolForSlot(slot) { return ITEMS.filter(i => i.type === 'gear' && i.slot === slot); }
+function foundGearForSlot(slot) { return gearPoolForSlot(slot).filter(i => DB.discoveries[i.id]); }
+function foundArtifacts() { return ITEMS.filter(i => i.type === 'artifact' && DB.discoveries[i.id]); }
+
+function gearRowHtml(label, item, available, action, attrs) {
+  const mark = item
+    ? `<span class="gear-mark" style="background:var(--r-${item.rarity})">${item.glyph}</span>`
+    : `<span class="gear-mark" style="background:var(--brd);color:var(--dim)">·</span>`;
+  const body = item
+    ? `<span class="gear-val">${item.name}</span><span class="gear-w">${S.gearWeight} ${RARITY_WEIGHT[item.rarity]}</span>`
+    : `<span class="gear-val empty">${available ? S.gearEmptySlot : S.gearNothingFound}</span>`;
+  return `<button class="gear-row" data-a="${action}" ${attrs}${available ? '' : ' disabled'}>
+    <span class="gear-slot">${label}</span>${mark}${body}
+  </button>`;
+}
+
+function renderGear(el) {
+  const header = `<div class="scr-hdr">
+      <button class="scr-back" data-a="close-gear">&lt;</button>
+      <div class="scr-title">${S.gearTitle}</div>
+    </div>`;
+
+  // слот, под который в игре ещё нет ни одного предмета, не рисуется пустой
+  // дыркой — формуляр показывает только то, что покрыто пулами
+  const slotsHtml = GEAR_SLOTS.filter(slot => gearPoolForSlot(slot).length).map(slot => {
+    const equippedId = DB.gear.appearance[slot];
+    const equipped = equippedId ? byId(equippedId) : null;
+    return gearRowHtml(S.slots[slot], equipped, foundGearForSlot(slot).length > 0, 'gear-pick', `data-slot="${slot}"`);
+  }).join('');
+
+  const artsAvailable = foundArtifacts().length > 0;
+  const beltHtml = [0, 1].map(i => {
+    const id = DB.gear.appearance.artifactSlots[i];
+    return gearRowHtml(S.gearBeltSlot + ' ' + (i + 1), id ? byId(id) : null, artsAvailable, 'gear-pick-art', `data-idx="${i}"`);
+  }).join('');
+
+  el.innerHTML = header + `<div class="sec">
+    <div class="gear-class">
+      <div class="gear-class-lbl">${S.gearClass}</div>
+      <div class="gear-class-val">${equipmentClass()}</div>
+      <div class="gear-class-hint">${S.gearClassHint}</div>
+    </div>
+    ${slotsHtml}
+    <div class="gear-belt-sub">${S.gearBelt}</div>
+    ${beltHtml}
+  </div>`;
+}
+
+function showGearPicker(slot) {
+  showPicker(S.slots[slot], foundGearForSlot(slot), DB.gear.appearance[slot], id => {
+    DB.gear.appearance[slot] = id;
+    save();
+    renderCurrent();
+  });
+}
+
+function showArtifactPicker(idx) {
+  // один и тот же артефакт не может лежать в обоих слотах пояса
+  const other = DB.gear.appearance.artifactSlots[idx === 0 ? 1 : 0];
+  const options = foundArtifacts().filter(i => i.id !== other);
+  showPicker(S.gearBeltSlot + ' ' + (idx + 1), options, DB.gear.appearance.artifactSlots[idx], id => {
+    DB.gear.appearance.artifactSlots[idx] = id;
+    save();
+    renderCurrent();
+  });
+}
+
+function showPicker(title, options, currentId, onPick) {
+  const rows = options.map(item => `<button class="gear-pick-item${item.id === currentId ? ' on' : ''}" data-pick="${item.id}">
+      <span class="gear-mark" style="background:var(--r-${item.rarity})">${item.glyph}</span>
+      <span class="gear-val">${item.name}</span>
+      <span class="gear-w">${S.gearWeight} ${RARITY_WEIGHT[item.rarity]}</span>
+      ${item.id === currentId ? `<span class="gear-pick-on-mark">✓</span>` : ''}
+    </button>`).join('');
+
+  mc.innerHTML = `<div class="ov" id="pick-ov">
+    <div class="mbox">
+      <div class="m-title">${title}</div>
+      ${rows || `<div class="m-text">${S.gearNothingFound}</div>`}
+      <div class="m-btns">
+        <button class="m-btn" data-pick="">${S.gearUnequip}</button>
+        <button class="m-btn pri" data-close="1">${S.closeBtn}</button>
+      </div>
+    </div>
+  </div>`;
+
+  mc.querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => {
+    mc.innerHTML = '';
+    onPick(b.dataset.pick || null);
+  }));
+  mc.querySelector('[data-close]').addEventListener('click', () => { mc.innerHTML = ''; });
+  mc.querySelector('#pick-ov').addEventListener('click', e => { if (e.target === e.currentTarget) mc.innerHTML = ''; });
+}
+
 /* ── CALENDAR ────────────────────────────────────────────────────────────── */
 function renderCalendar(el) {
   const ad = activeDays(calY, calM);
@@ -2002,7 +2538,7 @@ function renderCalendar(el) {
   for (let d = 1; d <= dim; d++) {
     const ds = calY + '-' + String(calM).padStart(2,'0') + '-' + String(d).padStart(2,'0');
     const cls = ad.has(ds) ? 'act' : ds === today ? 'tod' : '';
-    grid += `<div class="cal-d ${cls}" tabindex="0" data-a="cal-day" data-date="${ds}">${d}</div>`;
+    grid += `<div class="cal-d ${cls}" role="button" tabindex="0" data-a="cal-day" data-date="${ds}">${d}</div>`;
   }
 
   const ms = monthSummary(calY, calM);
@@ -2237,6 +2773,57 @@ function showInvDetail(itemId) {
   mc.querySelector('#det-ov').addEventListener('click', e => { if (e.target===e.currentTarget) mc.innerHTML = ''; });
 }
 
+/* Замок сектора показывает не только условия, но и МАНИФЕСТ: что там водится.
+   Ненайденное показано силуэтом — глиф виден, имя нет. Гейт, который
+   мотивирует цифрой, не мотивирует; мотивирует вещь, которую видел
+   и пока не можешь взять. */
+function showSectorInfo(sectorId) {
+  const sec = deepSectorById(sectorId);
+  if (!sec) return;
+  const st = deepSectorStatus(sec);
+
+  const condRows = st.conditions.map(c => `<div class="req-row${c.met ? ' req-met' : ''}">
+      <span class="req-mark">${c.met ? '✓' : '·'}</span>
+      <span class="req-name">${c.label}</span>
+      ${c.item ? '' : `<b>${c.have} / ${c.need}</b>`}
+    </div>`).join('');
+
+  const pool = ITEMS.filter(i => (i.sectors || []).includes(sec.id));
+  const manifestRows = pool.map(i => {
+    const known = !!DB.discoveries[i.id];
+    return `<div class="req-row${known ? ' req-met' : ''}">
+      <span class="req-mark" style="${known ? 'color:var(--r-' + i.rarity + ')' : 'opacity:.45'}">${i.glyph}</span>
+      <span class="req-name">${known ? i.name : S.sectorUnidentified}</span>
+      <b>${S.rarities[i.rarity]}</b>
+    </div>`;
+  }).join('');
+
+  const passItem = byId(sec.passItemId);
+  const passRow = passItem
+    ? `<div class="req-row${st.passes > 0 ? ' req-met' : ''}">
+         <span class="req-mark">${st.passes > 0 ? '✓' : '·'}</span>
+         <span class="req-name">${passItem.name}</span>
+         <b>${st.passes}</b>
+       </div>`
+    : '';
+
+  mc.innerHTML = `<div class="ov" id="sec-ov">
+    <div class="mbox">
+      <div class="m-title">${sec.name}</div>
+      <div class="inv-sub" style="padding:0 0 6px">${S.sectorConditions}</div>
+      ${condRows}${passRow}
+      <div class="inv-sub" style="padding:14px 0 6px">${S.sectorManifest}</div>
+      ${manifestRows}
+      <div class="d-info" style="margin-top:14px">${S.sectorBaseAlways}</div>
+      <div class="m-btns">
+        <button class="m-btn pri" data-a="close-modal">${S.closeBtn}</button>
+      </div>
+    </div>
+  </div>`;
+  mc.querySelector('[data-a="close-modal"]').addEventListener('click', () => { mc.innerHTML = ''; });
+  mc.querySelector('#sec-ov').addEventListener('click', e => { if (e.target === e.currentTarget) mc.innerHTML = ''; });
+}
+
 function showDayDetail(date) {
   const sessions = DB.sessions.filter(s => s.localDate === date);
   let inner = '';
@@ -2265,10 +2852,51 @@ function showDayDetail(date) {
 }
 
 /* ── LOOT REVEAL ─────────────────────────────────────────────────────────── */
-function showLoot(session, newAchievements) {
+/* Квитанция строится ПО ФАКТУ уже сохранённой сессии: ничего не начисляет,
+   ничего не списывает, только читает. Порядок дебрифа — факт, лут, ВЛИЯНИЕ
+   (что сдвинулось в контрактах), СЛЕДУЮЩИЙ ОРИЕНТИР. */
+function receiptImpactRows(session) {
+  const seen = new Map();
+  (session.drops || []).forEach(d => {
+    const item = byId(d.itemId);
+    if (!item || item.type !== 'material') return;
+    itemsNeededFor(d.itemId).forEach(n => seen.set(n.title, n));
+  });
+  return [...seen.values()];
+}
+
+/* «нужна для Медпункта, 4 из 12» — назначение предмета видно в момент,
+   когда он попал в руки, а не только в инвентаре */
+function lootCardNeedLine(item) {
+  if (!item || item.type !== 'material') return '';
+  const needs = itemsNeededFor(item.id);
+  if (!needs.length) return '';
+  const n = needs[0];
+  return `<div class="lc-need">${S.lcNeedPrefix} ${n.title}, ${n.have} ${S.lcNeedOf} ${n.qty}</div>`;
+}
+
+function nextBeaconText() {
+  const inst = nearestContract();
+  if (inst) {
+    const tpl = contractTemplate(inst.templateId);
+    const missing = requirementStatus(inst.templateId).filter(r => !r.met);
+    if (!missing.length) return tpl.title + ' — ' + S.beaconReady;
+    const m = missing[0];
+    const item = byId(m.itemId);
+    return tpl.title + ': ' + (item ? item.name : m.itemId) + ' ' + m.have + '/' + m.qty;
+  }
+  const li = levelInfo(totalXP());
+  return S.beaconLevel + ' ' + (li.level + 1) + ': ' + li.xpToNext + ' XP';
+}
+
+function showLoot(session, newAchievements, beforeXp) {
   const drops = session.drops || [];
   const achs = newAchievements || [];
   const rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const act = byAct(session.activityId);
+  const sector = session.sectorId ? deepSectorById(session.sectorId) : null;
+  const fromXp = beforeXp != null ? beforeXp : totalXP();
+  const toXp = totalXP();
 
   const cardsHtml = drops.map((d, i) => {
     const item = byId(d.itemId);
@@ -2277,13 +2905,48 @@ function showLoot(session, newAchievements) {
       <div class="lc-icon">${item.glyph}</div>
       <div class="lc-name">${item.name}</div>
       <div class="lc-rarity">${S.rarities[item.rarity]}</div>
+      ${lootCardNeedLine(item)}
     </div>`;
   }).join('');
 
+  const sortieNo = DB.sessions.findIndex(s => s.id === session.id) + 1;
+  const firstTime = drops.filter(d => {
+    const disc = DB.discoveries[d.itemId];
+    return disc && disc.totalFound === 1;
+  }).length;
+
+  const impact = receiptImpactRows(session);
+  const impactHtml = impact.length
+    ? impact.map(n => `<div class="rc-row"><span>${n.title}</span><b>${n.have} / ${n.qty}</b></div>`).join('')
+    : `<div class="rc-row rc-none">${S.receiptNoImpact}</div>`;
+
+  const lvlBefore = levelInfo(fromXp).level;
+  const lvlAfter = levelInfo(toXp).level;
+  let flashHtml = '';
+  if (lvlAfter > lvlBefore) {
+    const unlock = LEVEL_UNLOCKS.find(u => u.level > lvlBefore && u.level <= lvlAfter);
+    flashHtml = `<div class="rc-flash">${unlock ? S.accessExpanded + ': ' + unlock.label : S.levelUp + ': ' + lvlAfter}</div>`;
+  }
+
+  const receiptHtml = `<div class="receipt" id="receipt" hidden>
+    <div class="rc-title">${S.receiptTitle}</div>
+    ${flashHtml}
+    <div class="rc-row"><span>${S.receiptSortieNo}${sortieNo}</span><b>${act ? act.name : ''}</b></div>
+    <div class="rc-row"><span>${S.receiptSector}</span><b>${sector ? sector.name : (act ? act.location : '—')}</b></div>
+    ${sector ? `<div class="rc-row rc-none">${S.sectorPassSpent}</div>` : ''}
+    <div class="rc-row"><span>${S.receiptXp}</span><b>+${toXp - fromXp} XP</b></div>
+    <div class="rc-row"><span>${S.receiptFinds}</span><b>${drops.length}${firstTime ? ' · ' + firstTime + ' ' + S.receiptFirstTime : ''}</b></div>
+    <div class="rc-sub">${S.receiptImpact}</div>
+    ${impactHtml}
+    <div class="rc-sub">${S.receiptNext}</div>
+    <div class="rc-row rc-beacon">${nextBeaconText()}</div>
+  </div>`;
+
   mc.innerHTML = `<div class="loot-ov">
-    <div class="loot-title">${S.lootTitle}</div>
+    <div class="loot-title">${S.sectorReturnPrefix}${sector ? ': ' + sector.name.toUpperCase() : (act ? ': ' + act.location.toUpperCase() : '')}</div>
     <div class="loot-cards" id="lc">${cardsHtml}</div>
     <div class="ach-queue" id="ach-queue"></div>
+    ${receiptHtml}
     <div class="loot-acts">
       ${!rm ? `<button class="l-btn" id="skip-btn">${S.skipAnim}</button>` : ''}
       <button class="l-btn pri" id="close-loot" ${!rm?'style="display:none"':''}>${S.closeLoot}</button>
@@ -2310,6 +2973,8 @@ function showLoot(session, newAchievements) {
     showNext();
   }
 
+  const receiptEl = mc.querySelector('#receipt');
+
   let revealDone = false;
   function finishReveal() {
     if (revealDone) return;
@@ -2317,6 +2982,9 @@ function showLoot(session, newAchievements) {
     if (skipBtn) skipBtn.style.display = 'none';
     closeBtn.style.display = '';
     queueAchievements();
+    // квитанция и полоса XP — последними: сперва вещи, потом отчёт о них
+    if (receiptEl) receiptEl.hidden = false;
+    animateXpCountUp(fromXp, toXp, rm ? 0 : 900);
   }
 
   function revealAll() {
@@ -2396,7 +3064,7 @@ function sessionsLogRows() {
     s.localDate || '',
     fmtTime(s.completedAt, s.timeZone),
     byAct(s.activityId)?.name || s.activityId,
-    s.xpAwarded || 0,
+    s.xpAwarded != null ? s.xpAwarded : 10,   // same fallback as totalXP(), or migrated sessions export as 0 XP
     (s.drops || []).map(d => byId(d.itemId)?.name || d.itemId).join(', '),
   ]);
   return { header, body };
@@ -2440,7 +3108,17 @@ function exportSessionsHtml() {
 /* ── EVENTS ──────────────────────────────────────────────────────────────── */
 document.getElementById('tabs').addEventListener('click', e => {
   const b = e.target.closest('.t-btn');
-  if (b) { tab = b.dataset.tab; renderCurrent(); }
+  if (!b) return;
+  // calY/calM are set once at load; a PWA left open past midnight on the 1st
+  // would otherwise open КАЛЕНДАРЬ on last month with no "сегодня" marker.
+  // Reset on entry, not inside renderCalendar() — that would break cal-prev/next.
+  if (b.dataset.tab === 'calendar' && tab !== 'calendar') {
+    const n = new Date();
+    calY = n.getFullYear();
+    calM = n.getMonth() + 1;
+  }
+  tab = b.dataset.tab;
+  renderCurrent();
 });
 
 document.addEventListener('click', async e => {
@@ -2452,6 +3130,10 @@ document.addEventListener('click', async e => {
     case 'close-system':   closeScreen();            break;
     case 'open-contracts': openScreen('contracts');  break;
     case 'close-contracts': closeScreen();           break;
+    case 'open-gear':      openScreen('gear');       break;
+    case 'close-gear':     closeScreen();            break;
+    case 'gear-pick':      showGearPicker(t.dataset.slot);            break;
+    case 'gear-pick-art':  showArtifactPicker(Number(t.dataset.idx)); break;
     case 'version-tap':    tapVersion();              break;
 
     case 'dev-fake-sorties': generateFakeSorties(10); break;
@@ -2465,12 +3147,15 @@ document.addEventListener('click', async e => {
     case 'dev-toggle-ungate': toggleDevUngate(); break;
     case 'dev-clear-traces':  clearDevTraces();  break;
 
+    case 'sector-info': showSectorInfo(t.dataset.sector); break;
+
     case 'complete': {
       if (sortieBusy) return;
       const actId = t.dataset.act;
+      const sectorId = t.dataset.sector || null;
 
-      if (armedActId !== actId) {
-        armSortie(actId);
+      if (armedActId !== actId || armedSectorId !== sectorId) {
+        armSortie(actId, sectorId);
         return;
       }
 
@@ -2479,11 +3164,14 @@ document.addEventListener('click', async e => {
       sortieBusy = true;
       document.querySelectorAll('.cmp-btn').forEach(b => b.disabled = true);
 
-      const sess = completeSortie(actId);
+      const beforeXp = totalXP();
+      const sess = completeSortie(actId, sectorId ? { sectorId } : undefined);
       const newAch = checkNewAchievements();
       savePendingReveal(sess.id, newAch.map(a => a.id));
-      renderHeader();
-      showLoot(sess, newAch);
+      // шапка пока показывает старое значение: полоса догоняет в квитанции,
+      // а не прыгает до того, как человек увидел, за что
+      renderHeader(beforeXp);
+      showLoot(sess, newAch, beforeXp);
       break;
     }
 
@@ -2530,8 +3218,14 @@ document.addEventListener('click', async e => {
           try {
             const parsed = JSON.parse(ev.target.result);
             const coerced = coerceToV3(parsed);
+            // silence here read as success: the user had just confirmed
+            // "прогресс будет заменён" and got no reaction either way
             if (coerced) { DB = coerced; save(); render(); }
-          } catch(_) {}
+            else alert(S.importFailed);
+          } catch(err) {
+            console.error('[import]', err);
+            alert(S.importFailed);
+          }
         };
         r.readAsText(f);
       };
@@ -2591,7 +3285,9 @@ render();
   sortieBusy = true;
   document.querySelectorAll('.cmp-btn').forEach(b => b.disabled = true);
   const achs = ACHIEVEMENTS.filter(a => (pending.achievementIds || []).includes(a.id));
-  showLoot(sess, achs);
+  // XP этой вылазки уже в общей сумме: откатываем на её снимок, чтобы
+  // квитанция показала «+10», а не «+0», и полоса догнала как в первый раз
+  showLoot(sess, achs, totalXP() - (sess.xpAwarded != null ? sess.xpAwarded : 10));
 })();
 </script>
 </body>
