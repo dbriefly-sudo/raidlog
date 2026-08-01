@@ -245,10 +245,10 @@ body::after {
 .inv-item[data-r="legendary"] .i-icon { background: var(--r-legendary); }
 
 .i-cnt { position: absolute; top: 5px; right: 7px; font-size: 14px; color: var(--fg); font-weight: bold; }
-.i-name { font-size: 14px; color: var(--dim); line-height: 1.3; }
+.i-name { font-size: 15px; color: var(--fg); line-height: 1.35; }
 /* rarity is also carried by the border/glyph colour; this text keeps it
    readable when colour alone isn't available to the reader */
-.i-rar { font-size: 10px; letter-spacing: .5px; text-transform: uppercase; color: var(--dim); margin-top: 3px; }
+.i-rar { font-size: 12px; letter-spacing: .5px; text-transform: uppercase; color: var(--dim); margin-top: 4px; }
 .inv-empty { padding: 32px 16px; text-align: center; color: var(--dim); font-size: 14px; }
 .inv-item.needed { border-color: var(--acc); }
 .i-need { position: absolute; bottom: 5px; left: 6px; font-size: 10px; letter-spacing: .5px; color: var(--acc); text-transform: uppercase; }
@@ -344,6 +344,12 @@ body::after {
 .req-mark { width: 14px; text-align: center; }
 .contract-submit { margin-bottom: 0; }
 
+/* ЗВАНИЕ ЛОКАЦИИ — звёзды и слово, порог не показывается никогда */
+.act-rank { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
+.act-stars { font-size: 13px; letter-spacing: 2px; flex-shrink: 0; }
+.act-rank-name { font-size: 13px; letter-spacing: 1px; color: var(--fg); text-transform: uppercase; }
+.act-rank-next { font-size: 12px; letter-spacing: .5px; color: var(--dim); text-transform: uppercase; margin-left: auto; }
+
 /* DEEP SECTOR на карточке активности */
 .cmp-btn.deep { margin-top: 8px; background: rgba(168,136,207,.10); border-color: var(--r-very_rare); color: var(--r-very_rare); }
 .cmp-btn.deep:hover, .cmp-btn.deep:focus-visible { background: rgba(168,136,207,.20); }
@@ -378,11 +384,11 @@ body::after {
 .gear-row:hover, .gear-row:focus-visible { border-color: var(--dim); outline: none; }
 .gear-row:disabled { opacity: .4; cursor: default; }
 .gear-row:disabled:hover { border-color: var(--brd); }
-.gear-slot { flex-shrink: 0; width: 92px; color: var(--dim); letter-spacing: 1px; text-transform: uppercase; font-size: 13px; }
-.gear-mark { flex-shrink: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; color: #111; }
-.gear-val { flex: 1; line-height: 1.3; }
+.gear-slot { flex-shrink: 0; width: 96px; color: var(--dim); letter-spacing: .5px; text-transform: uppercase; font-size: 14px; }
+.gear-mark { flex-shrink: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: bold; color: #111; }
+.gear-val { flex: 1; line-height: 1.35; font-size: 15px; }
 .gear-val.empty { color: var(--dim); }
-.gear-w { flex-shrink: 0; font-size: 12px; color: var(--dim); letter-spacing: 1px; }
+.gear-w { flex-shrink: 0; font-size: 13px; color: var(--dim); letter-spacing: .5px; }
 .gear-belt-sub { font-size: 14px; color: var(--dim); letter-spacing: 1px; text-transform: uppercase; padding: 14px 0 8px; }
 .gear-pick-item {
   display: flex; align-items: center; gap: 10px;
@@ -584,8 +590,6 @@ body::after {
   .lc-rarity { font-size: 11px; }
 }
 
-.lc-need { font-size: 10px; letter-spacing: .3px; color: var(--acc); line-height: 1.25; margin-top: 4px; }
-
 /* КВИТАНЦИЯ — отчёт после карточек, а не вместо них */
 .receipt {
   width: 100%; max-width: 340px;
@@ -720,6 +724,13 @@ const S = {
   achUnlockedOn: 'Получено',
   achMoreLabel: 'ОСТАЛЬНЫЕ',
   activeDaysMo: 'Активных дней в этом месяце',
+  journalLine: 'ЖУРНАЛ',
+  journalDays: 'дней',
+  journalSorties: 'вылазок',
+  rankNext: 'дальше',
+  rankUp: 'ЗАФИКСИРОВАНО',
+  roundClosed: 'ЗОНА ОБОЙДЕНА · ПУТЕВОЙ ЛИСТ ВЫДАН',
+  roundTight: 'ЗОНА ОБОЙДЕНА ЗА ЧЕТЫРЕ ДНЯ · ДВА ЛИСТА',
   todaySess: 'СЕГОДНЯ',
   totalSessLbl: 'Всего',
   completeBtn: 'ВЕРНУЛСЯ С ВЫЛАЗКИ',
@@ -744,7 +755,7 @@ const S = {
   condSlots: 'Слотов найдено',
   lootTitle: 'ДОБЫЧА',
   // квитанция: факт -> лут -> ВЛИЯНИЕ -> СЛЕДУЮЩИЙ ОРИЕНТИР
-  receiptTitle: 'КВИТАНЦИЯ',
+  receiptTitle: 'ИТОГ',
   receiptSortieNo: 'ВЫЛАЗКА №',
   receiptSector: 'Сектор',
   receiptXp: 'Начислено',
@@ -752,13 +763,11 @@ const S = {
   receiptFirstTime: 'впервые',
   receiptImpact: 'ВЛИЯНИЕ',
   receiptNoImpact: 'Контракты не продвинулись.',
-  receiptNext: 'СЛЕДУЮЩИЙ ОРИЕНТИР',
+  receiptNext: 'БЛИЖЕ ВСЕГО',
   accessExpanded: 'ДОСТУП РАСШИРЕН',
   levelUp: 'УРОВЕНЬ ПОВЫШЕН',
   beaconReady: 'готов к сдаче',
   beaconLevel: 'До уровня',
-  lcNeedPrefix: 'нужна для',
-  lcNeedOf: 'из',
   skipAnim: 'ПРОПУСТИТЬ',
   closeLoot: 'ЗАКРЫТЬ',
   level: 'УРОВЕНЬ',
@@ -766,8 +775,8 @@ const S = {
   invEmpty: 'Инвентарь пуст. Выполните вылазку.',
   invMaterials: 'МАТЕРИАЛЫ',
   invGear: 'СНАРЯЖЕНИЕ',
-  gearTitle: 'ФОРМУЛЯР ОПЕРАТОРА',
-  gearNavLabel: 'ФОРМУЛЯР',
+  gearTitle: 'ЭКИПИРОВКА',
+  gearNavLabel: 'ЭКИПИРОВКА',
   gearClass: 'КЛАСС ОСНАЩЕНИЯ',
   gearClassHint: 'Считается по НАЙДЕННОМУ, а не по надетому. Надетое — вид, не допуск: на награду за вылазку и на допуски не влияет.',
   gearBelt: 'ПОЯС',
@@ -787,6 +796,12 @@ const S = {
   contractAnyLoc: 'ЛЮБАЯ ЛОКАЦИЯ',
   contractsNavLabel: 'КОНТРАКТЫ',
   contractsReadyUnit: 'готово к сдаче',
+  // без числа: цифра на кнопке читается как невыполненная работа, а тут
+  // наоборот — уже заработанное и невыданное
+  contractsReward: 'НАГРАДА ЖДЁТ',
+  beaconMilestone: 'СЛЕДУЮЩИЙ РУБЕЖ',
+  beaconNextLevel: 'НОВЫЙ УРОВЕНЬ',
+  passOnHand: 'НА РУКАХ',
   openBoardBtn: 'ОТКРЫТЬ ДОСКУ',
   neededForPrefix: 'Нужно для',
   contractsEmpty: 'Пока нет активных контрактов. Загляните после следующей вылазки.',
@@ -805,7 +820,7 @@ const S = {
   msSorties: 'Вылазок',
   msXp: 'XP за месяц',
   msByAct: 'По активностям',
-  msBestMonth: 'Лучший месяц',
+  msBestMonth: 'Плотнейший месяц зафиксирован',
   msBestUnit: 'вылазок',
   msNoData: 'Данные появятся после первой вылазки.',
   exportBtn: 'ЭКСПОРТ СОХРАНЕНИЯ',
@@ -940,6 +955,9 @@ const ITEMS = [
   { id: 'sealed_battery',  name: 'Запаянный аккумулятор', rarity: 'legendary', type: 'collectible', activities: [], sectors: ['tank_sump'], glyph: '❈', role: 'legendary', dropChannel: 'special', unique: true, stackable: false, consumable: false },
 
   /* ── Награды контрактов ───────────────────────────────────────────────── */
+  /* Как и combo_backpack — activities пустой, чтобы гарантированный путь
+     не выдавал то, что и так падает в RNG. */
+  { id: 'kb_carbine', name: 'Кустарный карабин', rarity: 'very_rare', type: 'gear', slot: 'weapon', activities: [], glyph: '⊢', role: 'gear', dropChannel: 'special', unique: true, stackable: false, consumable: false },
   { id: 'combo_backpack', name: 'Экспедиционный рюкзак', rarity: 'rare', type: 'gear', slot: 'backpack', activities: [], glyph: '▥', role: 'gear', dropChannel: 'special', unique: true, stackable: false, consumable: false },
 ];
 
@@ -961,7 +979,7 @@ const SECTOR_LOOT_PROFILES = {
     channels: [
       { role: 'gear',          weight: 7 },
       { role: 'contract_part', weight: 12 },
-      { role: 'sector_pass',   weight: 10 },
+      { role: 'sector_pass',   weight: 6 },
       { role: 'legendary',     weight: 2 },
     ],
   },
@@ -974,11 +992,14 @@ const SECTOR_LOOT_PROFILES = {
     channels: [
       { role: 'gear',          weight: 7 },
       { role: 'contract_part', weight: 12 },
-      // 8 -> 14: появление пропуска в спецканале разбавило долю ключевого
-      // артефакта; аудит уже фиксировал просадку с ~9.4% до ~5.5% за вылазку.
-      // 14 возвращает её к ~6.2%. Ориентир из handoff — 8%.
-      { role: 'key_artifact',  weight: 14 },
-      { role: 'sector_pass',   weight: 10 },
+      // Стабилизатор — единственный ключ ко всей системе глубины, и pity нет,
+      // поэтому вес держится ВЫШЕ порога handoff (8%): 35 даёт ~10.6% за
+      // вылазку, то есть в среднем 9 выходов до ключа и почти нулевой хвост
+      // невезения. Гринд единственного блокирующего предмета — не механика,
+      // а налог. Предмет уникальный: найдётся и уйдёт из пула, веса сами
+      // перераспределятся.
+      { role: 'key_artifact',  weight: 35 },
+      { role: 'sector_pass',   weight: 6 },
       { role: 'legendary',     weight: 2 },
     ],
   },
@@ -986,7 +1007,7 @@ const SECTOR_LOOT_PROFILES = {
     specialChance: 0.20,
     channels: [
       { role: 'contract_part', weight: 12 },
-      { role: 'sector_pass',   weight: 10 },
+      { role: 'sector_pass',   weight: 6 },
       { role: 'legendary',     weight: 2 },
     ],
   },
@@ -994,7 +1015,7 @@ const SECTOR_LOOT_PROFILES = {
     specialChance: 0.20,
     channels: [
       { role: 'contract_part', weight: 12 },
-      { role: 'sector_pass',   weight: 10 },
+      { role: 'sector_pass',   weight: 6 },
       { role: 'legendary',     weight: 2 },
     ],
   },
@@ -1113,6 +1134,34 @@ function levelInfo(xp) {
 
 const RANKS = ['Новичок', 'Полевой оператор', 'Следопыт', 'Специалист', 'Ветеран сектора'];
 
+/* ── ЗВАНИЯ ЛОКАЦИЙ ──────────────────────────────────────────────────────── */
+/* Накопительно по числу вылазок в локацию, откатиться не может. Следующее
+   звание НАЗВАНО, порог НЕ показан: «дальше: НАСИЖЕННАЯ» тянет, «12 из 25»
+   обязывает — это разница между целью и квотой.
+   Регистр намеренно жаргонный: весь остальной проект написан казённым языком
+   («Диэлектрический стабилизатор», «Путевой лист отстойника»), а звание —
+   единственное место, где место называет тот, кто туда ходит, а не ведомость.
+   Эстетика жанра живёт на столкновении этих двух регистров. */
+const ACTIVITY_RANKS = [
+  { at: 1,   name: 'ХОЖЕНАЯ' },
+  { at: 10,  name: 'ПРИКОРМЛЕННАЯ' },
+  { at: 25,  name: 'НАСИЖЕННАЯ' },
+  { at: 50,  name: 'СВОЙ КВАДРАТ' },
+  { at: 100, name: 'РОДНАЯ' },
+];
+
+function activityRank(count) {
+  let idx = -1;
+  ACTIVITY_RANKS.forEach((r, i) => { if (count >= r.at) idx = i; });
+  return {
+    index: idx,
+    name: idx >= 0 ? ACTIVITY_RANKS[idx].name : null,
+    next: idx + 1 < ACTIVITY_RANKS.length ? ACTIVITY_RANKS[idx + 1].name : null,
+    stars: idx + 1,
+    total: ACTIVITY_RANKS.length,
+  };
+}
+
 function rankForLevel(lvl) {
   return RANKS[Math.min(Math.floor((lvl - 1) / 5), RANKS.length - 1)];
 }
@@ -1180,6 +1229,26 @@ const CONTRACT_TEMPLATES = [
   { id: 'knigokhran_survey', title: 'СВЕРКА КАРТ СЕКТОРА', location: 'Книгохранилище',
     requires: [{ itemId: 'catalog_card', qty: 1 }, { itemId: 'drain_map', qty: 2 }],
     reward: { items: [{ itemId: 'microfiche', qty: 1 }] } },
+
+  /* Даёт «Просроченному пропуску» потребителя и заодно ДЕТЕРМИНИРОВАННЫЙ путь
+     в глубину помимо RNG: бумажная волокита вместо везения. Пропуск при этом
+     не становится валютой — его нельзя обменять, только изготовить из хлама. */
+  { id: 'radiovyshka_renew', title: 'ПРОДЛЕНИЕ ДОПУСКА', location: 'Радиовышка',
+    requires: [{ itemId: 'sector_pass', qty: 2 }, { itemId: 'registrar_seal', qty: 1 }],
+    reward: { items: [{ itemId: 'pass_sump', qty: 1 }] } },
+
+  /* ВРЕМЕННАЯ ЗАГЛУШКА, переделать вместе с системой оружия.
+     Ствол, собираемый из двух подшипников и мотка провода, — поделка,
+     а не оружие. Принятое направление: стволы ПАДАЮТ (в том числе
+     дрянные), у них износ ЗА ИСПОЛЬЗОВАНИЕ (никогда за календарное
+     время, при нуле не ломаются — состояние «требует обслуживания»),
+     чинятся ремкомплектом и улучшаются обвесами, для которых нужны
+     запчасти разных тиров. Тогда запчасти никогда не станут мусором:
+     улучшать можно всегда. Это связка из трёх систем (под-слоты,
+     износ, тиры запчастей) — отдельный этап, не правка. */
+  { id: 'weapon_assembly', title: 'СБОРКА ОРУЖИЯ', location: null,
+    requires: [{ itemId: 'stamped_bearing', qty: 2 }, { itemId: 'antenna_coil', qty: 1 }, { itemId: 'copper_wire', qty: 4 }],
+    reward: { items: [{ itemId: 'kb_carbine', qty: 1 }] } },
 
   { id: 'med_station', title: 'МЕДПУНКТ СТАНЦИИ', location: null,
     requires: [{ itemId: 'aidulin', qty: 2 }, { itemId: 'field_bandage', qty: 2 }, { itemId: 'army_medkit', qty: 1 }],
@@ -1286,7 +1355,7 @@ function validateConfigs() {
 
 /* ── STORAGE ─────────────────────────────────────────────────────────────── */
 const KEY = 'raidlog_v1';
-const APP_VERSION = '0.2.4';
+const APP_VERSION = '0.2.5';
 const DEV_MODE_KEY = 'raidlog_devmode_v1';
 const DEV_UNGATE_KEY = 'raidlog_dev_ungate_v1';
 
@@ -1635,6 +1704,45 @@ function deepSectorStatus(sector) {
 
 function canEnterDeep(sector) { return deepSectorStatus(sector).unlocked; }
 
+/* ПОЛНЫЙ ОБХОД: побывал во всех локациях с момента прошлого замкнутого круга.
+   Календарной границы НЕТ намеренно — круг не привязан к суткам, не сгорает
+   и не может быть «не успет». Занял два дня или девять — неважно.
+   Вычисляется из журнала, ничего не хранится. */
+function fullRoundState(sessions) {
+  const open = new Set();
+  let rounds = 0, startIdx = 0, lastRound = null;
+  sessions.forEach((s, i) => {
+    if (!byAct(s.activityId)) return;
+    if (open.size === 0) startIdx = i;
+    open.add(s.activityId);
+    if (open.size >= ACTIVITIES.length) {
+      rounds++;
+      lastRound = { from: sessions[startIdx].localDate, to: s.localDate };
+      open.clear();
+    }
+  });
+  return { rounds, open, lastRound };
+}
+
+/* Разница в днях по компонентам: YYYY-MM-DD через new Date(str) читается как
+   UTC-полночь и съезжает в отрицательных поясах. Date.UTC от чисел безопасен. */
+function daysBetweenLocalDates(a, b) {
+  if (!a || !b) return 0;
+  const [y1, m1, d1] = a.split('-').map(Number);
+  const [y2, m2, d2] = b.split('-').map(Number);
+  return Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 86400000);
+}
+
+/* Плотный круг = замкнут за TIGHT_ROUND_DAYS календарных дней или быстрее,
+   то есть темпом примерно «по одной локации в день». Медленный круг НИЧЕГО
+   не теряет — он даёт тот же наряд; плотный даёт второй. Доплата за темп,
+   а не штраф за его отсутствие: дедлайна нет, сгореть нечему. */
+const TIGHT_ROUND_DAYS = 4;
+
+function roundSpanDays(lastRound) {
+  return lastRound ? daysBetweenLocalDates(lastRound.from, lastRound.to) + 1 : 0;
+}
+
 function sessCount(actId) {
   return actId
     ? DB.sessions.filter(s => s.activityId === actId).length
@@ -1917,7 +2025,13 @@ function comboTemplatesEligible() {
   if (closedLocations.size < 2) return [];
   return CONTRACT_TEMPLATES.filter(t => t.combo
     && !DB.contracts.active.some(a => a.templateId === t.id)
-    && !DB.contracts.completed.some(c => c.templateId === t.id));
+    && !DB.contracts.completed.some(c => c.templateId === t.id)
+    // на доску — только после ПЕРВОЙ находки одного из требуемых предметов.
+    // Иначе карточка стоит в одном регистре с выполнимыми контрактами и
+    // читается как невыполненная работа, единственный путь к которой —
+    // «сходить ещё раз, вдруг выпадет пропуск». До находки цель живёт
+    // в манифесте сектора, а не слотом на доске
+    && t.requires.some(r => DB.discoveries[r.itemId]));
 }
 
 /* only ever called from completeSortie(), gated to the first real sortie of a
@@ -1931,8 +2045,6 @@ function comboTemplatesEligible() {
    alongside the 4 regular ones, temporarily growing the board up to the
    10-total cap. */
 function generateContracts(dateStr) {
-  const isFirstEver = DB.contracts.lastGeneratedLocalDate === null;
-
   ACTIVITIES.forEach(a => {
     if (DB.contracts.active.length >= 10) return;
     const slotOccupied = DB.contracts.active.some(inst => {
@@ -1947,10 +2059,15 @@ function generateContracts(dateStr) {
     if (pool.length) DB.contracts.active.push({ id: uid(), templateId: pickRandom(pool).id });
   });
 
-  if (isFirstEver && DB.contracts.active.length < 10) {
-    const med = contractTemplate('med_station');
-    if (med) DB.contracts.active.push({ id: uid(), templateId: med.id });
-  }
+  // фоновые контракты (location: null) слота не занимают: подсеваются, если
+  // не висят на доске и не были закрыты. Так добавленный данными фоновый
+  // контракт доходит до старого сейва, а не остаётся мёртвым грузом
+  CONTRACT_TEMPLATES.filter(t => !t.combo && !t.location).forEach(tpl => {
+    if (DB.contracts.active.length >= 10) return;
+    if (DB.contracts.active.some(c => c.templateId === tpl.id)) return;
+    if (DB.contracts.completed.some(c => c.templateId === tpl.id)) return;
+    DB.contracts.active.push({ id: uid(), templateId: tpl.id });
+  });
 
   comboTemplatesEligible().forEach(tpl => {
     if (DB.contracts.active.length < 10) DB.contracts.active.push({ id: uid(), templateId: tpl.id });
@@ -2043,7 +2160,21 @@ function completeSortie(actId, opts) {
 
   applyDrops(drops, { actId, dateStr, isoTimestamp: sess.completedAt, kind: opts.source === 'dev' ? 'dev' : 'sortie', sourceId: sess.id });
 
+  const roundsBefore = fullRoundState(DB.sessions).rounds;
   DB.sessions.push(sess);
+  const roundState = fullRoundState(DB.sessions);
+  if (roundState.rounds > roundsBefore) {
+    sess.roundClosed = true;
+    const span = roundSpanDays(roundState.lastRound);
+    sess.roundTight = span > 0 && span <= TIGHT_ROUND_DAYS;
+    // наградой за круг служит сам пропуск в глубину: он нужен всегда
+    // и тратится всегда, поэтому мёртвым грузом стать не может
+    const orders = sess.roundTight ? 2 : 1;
+    applyDrops(Array(orders).fill({ itemId: 'pass_sump' }), {
+      actId, dateStr, isoTimestamp: sess.completedAt,
+      kind: opts.source === 'dev' ? 'dev' : 'sortie', sourceId: sess.id,
+    });
+  }
 
   if (!opts.date && DB.contracts.lastGeneratedLocalDate !== dateStr) generateContracts(dateStr);
 
@@ -2315,8 +2446,10 @@ function nearestContractCardHtml() {
 }
 
 function renderSortie(el) {
-  const now = new Date();
-  const adm = activeDays(now.getFullYear(), now.getMonth()+1).size;
+  // Накопительные числа, а не месячные: месячное обнуляется первого числа,
+  // то есть умеет падать — а величина, способная упасть, читается как отчёт
+  // о падении. Месячная сводка живёт в календаре, как факт закрытого периода.
+  const totalDays = activeDaySet(DB).size;
 
   let html = '';
   ACTIVITIES.forEach(a => {
@@ -2350,11 +2483,21 @@ function renderSortie(el) {
       }
     });
 
+    const rank = activityRank(tot);
+    const rankHtml = rank.name
+      ? `<div class="act-rank">
+           <span class="act-stars" style="color:${a.accent}">${'★'.repeat(rank.stars)}${'☆'.repeat(rank.total - rank.stars)}</span>
+           <span class="act-rank-name">${rank.name}</span>
+           ${rank.next ? `<span class="act-rank-next">${S.rankNext}: ${rank.next}</span>` : ''}
+         </div>`
+      : '';
+
     html += `<div class="act-card" style="border-color:${a.accent}">
       <div class="act-hdr">
         <div class="act-name" style="color:${a.accent}">${a.name}</div>
         <div class="act-gname">${a.gameName}</div>
       </div>
+      ${rankHtml}
       <div class="act-meta">
         ${todayHtml}
         <span>${S.totalSessLbl}: <b>${tot}</b></span>
@@ -2367,7 +2510,7 @@ function renderSortie(el) {
   html += nearestContractCardHtml();
 
   el.innerHTML =
-    `<div class="sbar"><span>${S.activeDaysMo}: <b>${adm}</b></span></div>` +
+    `<div class="sbar"><span>${S.journalLine}: <b>${totalDays}</b> ${S.journalDays} · <b>${DB.sessions.length}</b> ${S.journalSorties}</span></div>` +
     `<div class="sec">${html}</div>`;
 }
 
@@ -2401,7 +2544,7 @@ function renderInventory(el) {
   const readyCount = DB.contracts.active.filter(c => canFulfillContract(c.templateId)).length;
   html += `<button class="scr-nav-btn" data-a="open-contracts">
     <span>${S.contractsNavLabel}</span>
-    ${readyCount ? `<span class="scr-nav-badge">${readyCount} ${S.contractsReadyUnit}</span>` : ''}
+    ${readyCount ? `<span class="scr-nav-badge">${S.contractsReward}</span>` : ''}
   </button>`;
 
   html += `<button class="scr-nav-btn" data-a="open-gear">
@@ -2417,7 +2560,11 @@ function renderInventory(el) {
   if (!materials.length && !gear.length && !collectibles.length && !artifacts.length) {
     html += `<div class="inv-empty">${S.invEmpty}</div>`;
   } else {
-    html += invSection(S.invMaterials,    materials,    item => 'x' + DB.inventory[item.id], neededForContracts());
+    // у пропуска счётчик не показывается: остаток превращает документ
+    // в валютный баланс, который можно проверить перед занятием
+    html += invSection(S.invMaterials, materials,
+      item => item.role === 'sector_pass' ? S.passOnHand : 'x' + DB.inventory[item.id],
+      neededForContracts());
     html += invSection(S.invGear,         gear,         () => '');
     html += invSection(S.invCollectibles, collectibles, () => '');
     html += invSection(S.invArtifacts,    artifacts,    () => '');
@@ -2803,7 +2950,7 @@ function showSectorInfo(sectorId) {
     ? `<div class="req-row${st.passes > 0 ? ' req-met' : ''}">
          <span class="req-mark">${st.passes > 0 ? '✓' : '·'}</span>
          <span class="req-name">${passItem.name}</span>
-         <b>${st.passes}</b>
+         <b>${st.passes > 0 ? S.passOnHand : S.sectorNeedPass}</b>
        </div>`
     : '';
 
@@ -2855,25 +3002,35 @@ function showDayDetail(date) {
 /* Квитанция строится ПО ФАКТУ уже сохранённой сессии: ничего не начисляет,
    ничего не списывает, только читает. Порядок дебрифа — факт, лут, ВЛИЯНИЕ
    (что сдвинулось в контрактах), СЛЕДУЮЩИЙ ОРИЕНТИР. */
+/* Только то, что РЕАЛЬНО сдвинулось этой вылазкой. «Сколько упало» известно
+   из session.drops, значит «было» = «стало минус упало» — снимок хранить
+   не нужно. Иначе в ВЛИЯНИЕ попадал бы контракт, укомплектованный ещё вчера,
+   и заголовок обещал бы дельту, а показывал связь. */
 function receiptImpactRows(session) {
+  const dropped = {};
+  (session.drops || []).forEach(d => { dropped[d.itemId] = (dropped[d.itemId] || 0) + 1; });
+
   const seen = new Map();
-  (session.drops || []).forEach(d => {
-    const item = byId(d.itemId);
+  Object.keys(dropped).forEach(itemId => {
+    const item = byId(itemId);
     if (!item || item.type !== 'material') return;
-    itemsNeededFor(d.itemId).forEach(n => seen.set(n.title, n));
+    DB.contracts.active.forEach(inst => {
+      const tpl = contractTemplate(inst.templateId);
+      const req = tpl && tpl.requires.find(r => r.itemId === itemId);
+      if (!req) return;
+      const have = DB.inventory[itemId] || 0;
+      const after = Math.min(have, req.qty);
+      const before = Math.min(Math.max(have - dropped[itemId], 0), req.qty);
+      if (after > before) seen.set(tpl.title, { title: tpl.title, have: after, qty: req.qty });
+    });
   });
   return [...seen.values()];
 }
 
-/* «нужна для Медпункта, 4 из 12» — назначение предмета видно в момент,
-   когда он попал в руки, а не только в инвентаре */
-function lootCardNeedLine(item) {
-  if (!item || item.type !== 'material') return '';
-  const needs = itemsNeededFor(item.id);
-  if (!needs.length) return '';
-  const n = needs[0];
-  return `<div class="lc-need">${S.lcNeedPrefix} ${n.title}, ${n.have} ${S.lcNeedOf} ${n.qty}</div>`;
-}
+/* Назначение предмета на карточке лута НЕ пишется: то же самое ниже говорит
+   ВЛИЯНИЕ (и только про то, что реально сдвинулось), а подробности — в
+   карточке предмета из инвентаря. На 104px ширины это была третья строка
+   мелким шрифтом, дублирующая квитанцию. */
 
 function nextBeaconText() {
   const inst = nearestContract();
@@ -2883,10 +3040,13 @@ function nextBeaconText() {
     if (!missing.length) return tpl.title + ' — ' + S.beaconReady;
     const m = missing[0];
     const item = byId(m.itemId);
-    return tpl.title + ': ' + (item ? item.name : m.itemId) + ' ' + m.have + '/' + m.qty;
+    // без арифметики: ориентир называет ВЕЩЬ И МЕСТО. Как только тут появится
+    // число, строка из адреса превратится в квоту («ещё 2 вылазки до…»)
+    return tpl.title + ' · ' + (item ? item.name : m.itemId);
   }
   const li = levelInfo(totalXP());
-  return S.beaconLevel + ' ' + (li.level + 1) + ': ' + li.xpToNext + ' XP';
+  const nextUnlock = LEVEL_UNLOCKS.find(u => u.level > li.level);
+  return S.beaconMilestone + ' · ' + (nextUnlock ? nextUnlock.label : S.beaconNextLevel);
 }
 
 function showLoot(session, newAchievements, beforeXp) {
@@ -2905,7 +3065,6 @@ function showLoot(session, newAchievements, beforeXp) {
       <div class="lc-icon">${item.glyph}</div>
       <div class="lc-name">${item.name}</div>
       <div class="lc-rarity">${S.rarities[item.rarity]}</div>
-      ${lootCardNeedLine(item)}
     </div>`;
   }).join('');
 
@@ -2926,6 +3085,16 @@ function showLoot(session, newAchievements, beforeXp) {
   if (lvlAfter > lvlBefore) {
     const unlock = LEVEL_UNLOCKS.find(u => u.level > lvlBefore && u.level <= lvlAfter);
     flashHtml = `<div class="rc-flash">${unlock ? S.accessExpanded + ': ' + unlock.label : S.levelUp + ': ' + lvlAfter}</div>`;
+  }
+
+  // звание локации: жаргонная строка казённым голосом системы
+  const actCount = sessCount(session.activityId);
+  const rankAfter = activityRank(actCount);
+  if (act && rankAfter.index > activityRank(actCount - 1).index) {
+    flashHtml += `<div class="rc-flash">${S.rankUp}: ${act.location.toUpperCase()} — ${rankAfter.name}</div>`;
+  }
+  if (session.roundClosed) {
+    flashHtml += `<div class="rc-flash">${session.roundTight ? S.roundTight : S.roundClosed}</div>`;
   }
 
   const receiptHtml = `<div class="receipt" id="receipt" hidden>
